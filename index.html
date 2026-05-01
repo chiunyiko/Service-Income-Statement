@@ -492,7 +492,7 @@ textarea{resize:vertical;min-height:80px}
 // ║  ★ 填入你的 Apps Script 網址（只需改這裡）       ║
 // ║  格式：https://script.google.com/a/macros/...    ║
 // ╚══════════════════════════════════════════════════╝
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEPTRKm_Vy-uyyvLlY3BOJ2RfjHCQFSyN0qXM1uYNXNTiMvFgGKXaj6bjCxkPF3if55g/exec";
+const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 </script>
 
 <div class="loading-overlay" id="loadingOverlay">
@@ -807,7 +807,7 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEPTRKm_Vy-uyy
       </div>
     </div>
 
-    <div id="errStep3" class="err-msg">請填寫所有必填欄位（含簽名）</div>
+    <div id="errStep3" class="err-msg">請填寫所有必填欄位，並完成簽名（手寫或上傳圖片）</div>
     <div class="nav-row">
       <button class="btn btn-ghost" onclick="prevStep(3)">← 返回</button>
       <button class="btn btn-gold" onclick="nextStep(3)">確認送出 →</button>
@@ -1029,7 +1029,7 @@ function validateStep(s) {
   if (s===1) return req("name")&&req("idNumber")&&req("phone")&&req("email");
   if (s===2) return req("bankName")&&req("bankCode")&&req("accountName")&&req("accountNumber")
              &&!!uploadedImages.idFront&&!!uploadedImages.idBack&&!!uploadedImages.bankCover;
-  if (s===3) return projects.length>0&&req("amount")&&!!getSignatureDataURL();
+  if (s===3) return projects.length>0 && req("amount") && !!getSignatureDataURL();
   return true;
 }
 
@@ -1057,6 +1057,20 @@ function goToStep(n) {
     if (line) line.classList.toggle("done", i<n);
   });
   window.scrollTo({top:0,behavior:"smooth"});
+  // 進入 Step 3 時初始化 canvas 尺寸（此時 canvas 才真正顯示在頁面上）
+  if (n === 3) {
+    setTimeout(() => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0) {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width  = rect.width  * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+      }
+    }, 50);
+  }
 }
 
 // ══ REVIEW ══
@@ -1658,20 +1672,20 @@ const canvas=document.getElementById("sigCanvas"), ctx=canvas.getContext("2d");
 // ── Canvas 尺寸修正：讓 canvas 實際像素 = 顯示大小 ──
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
+  if (rect.width === 0) return; // canvas 還沒顯示，跳過
   const dpr = window.devicePixelRatio || 1;
   canvas.width  = rect.width  * dpr;
   canvas.height = rect.height * dpr;
   ctx.scale(dpr, dpr);
-  // 重設畫筆樣式（resize 後會清除）
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 }
-// 初始化及視窗縮放時重設
-window.addEventListener("load", resizeCanvas);
+// 視窗縮放時重設（不在 load 時執行，改由 goToStep(3) 觸發）
 window.addEventListener("resize", () => {
-  const hadSig = canvas.classList.contains("has-sig");
-  resizeCanvas();
-  if (hadSig) canvas.classList.remove("has-sig"); // resize 後筆跡消失，重置狀態
+  if (canvas.getBoundingClientRect().width > 0) {
+    canvas.classList.remove("has-sig");
+    resizeCanvas();
+  }
 });
 function getPos(e,c){
   const r=c.getBoundingClientRect();
