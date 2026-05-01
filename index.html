@@ -492,7 +492,7 @@ textarea{resize:vertical;min-height:80px}
 // ║  ★ 填入你的 Apps Script 網址（只需改這裡）       ║
 // ║  格式：https://script.google.com/a/macros/...    ║
 // ╚══════════════════════════════════════════════════╝
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEPTRKm_Vy-uyyvLlY3BOJ2RfjHCQFSyN0qXM1uYNXNTiMvFgGKXaj6bjCxkPF3if55g/exec";
+const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 </script>
 
 <div class="loading-overlay" id="loadingOverlay">
@@ -1138,199 +1138,523 @@ async function submitForm() {
   }
 }
 
-// ══ PDF ══
-async function downloadPDF() {
+// ══ PDF：用 HTML 列印（完整中文支援） ══
+function downloadPDF() {
   if (!lastSubmittedData) return;
   const d = lastSubmittedData;
-  const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({unit:"mm",format:"a4"});
-  const W=210, M=15;
-  let y=0;
-
-  // Palette
-  const INK=[13,13,15], INK2=[22,22,28], INK3=[30,30,38];
-  const GOLD=[201,168,76], GOLD2=[232,201,122];
-  const GRAY=[100,100,110], LGRAY=[50,50,60], LLGRAY=[38,38,48];
-  const WHITE=[255,255,255], OFFWHITE=[230,228,221];
-  const fnt=(sz,st="normal")=>{doc.setFontSize(sz);doc.setFont("helvetica",st)};
-  const tc=c=>doc.setTextColor(...c);
-  const fc=c=>doc.setFillColor(...c);
-  const sc=(c,w=0.3)=>{doc.setDrawColor(...c);doc.setLineWidth(w)};
-
-  // ── PAGE BG ──
-  fc(INK); doc.rect(0,0,W,297,"F");
-  // subtle grid
-  doc.setDrawColor(201,168,76); doc.setLineWidth(0.05); doc.setGState(doc.GState({opacity:0.06}));
-  for(let gx=0;gx<W;gx+=10) doc.line(gx,0,gx,297);
-  for(let gy=0;gy<297;gy+=10) doc.line(0,gy,W,gy);
-  doc.setGState(doc.GState({opacity:1}));
-
-  // ── HEADER BLOCK ──
-  fc(INK2); doc.rect(0,0,W,40,"F");
-  // gold left bar
-  fc(GOLD); doc.rect(0,0,3,40,"F");
-  // gold bottom line
-  sc(GOLD,0.4); doc.line(3,39.8,W,39.8);
-
-  fnt(18,"bold"); tc(GOLD);
-  doc.text("MixCode Studio",M+4,15);
-  fnt(8); tc([150,140,100]);
-  doc.text("LABOUR REMUNERATION REPORT",M+4,22);
-  fnt(7); tc(GRAY);
-  doc.text("No. "+d.appId,W-M,14,{align:"right"});
-  doc.text(d.submittedAt,W-M,21,{align:"right"});
-  y=48;
-
-  // ── SECTION HELPER ──
-  function sec(title,sub) {
-    // gold accent line
-    fc(GOLD); doc.rect(M,y,3,7,"F");
-    fnt(9,"bold"); tc(GOLD); doc.text(title,M+6,y+5.2);
-    if(sub){fnt(7); tc(GRAY); doc.text(sub,M+6+doc.getTextWidth(title)+4,y+5.2);}
-    sc([50,50,60],0.2); doc.line(M,y+7,W-M,y+7);
-    y+=12;
-  }
-
-  // ── TABLE ROW ──
-  function tr(label,value,altBg=false) {
-    if(altBg){fc(LLGRAY);doc.rect(M,y,W-M*2,7.5,"F");}
-    fnt(7,"bold"); tc(GRAY); doc.text(label,M+2,y+5.2);
-    fnt(8); tc(OFFWHITE);
-    const lines=doc.splitTextToSize(String(value||""),W-M*2-55);
-    doc.text(lines[0]||"",M+55,y+5.2);
-    sc([40,40,50],0.15); doc.line(M,y+7.5,W-M,y+7.5);
-    y+=7.5;
-  }
-  function tr2(l1,v1,l2,v2,altBg=false) {
-    const half=(W-M*2)/2;
-    if(altBg){fc(LLGRAY);doc.rect(M,y,W-M*2,7.5,"F");}
-    fnt(7,"bold"); tc(GRAY);
-    doc.text(l1,M+2,y+5.2); doc.text(l2,M+half+2,y+5.2);
-    fnt(8); tc(OFFWHITE);
-    doc.text(String(v1||""),M+38,y+5.2);
-    doc.text(String(v2||""),M+half+38,y+5.2);
-    sc([40,40,50],0.15); doc.line(M,y+7.5,W-M,y+7.5);
-    sc([50,50,60],0.2); doc.line(M+half,y,M+half,y+7.5);
-    y+=7.5;
-  }
-
-  // ── BASIC INFO ──
-  sec("基本資訊","PERSONAL INFORMATION");
-  tr2("填寫日期",d.submittedAt.slice(0,10),"編號",d.appId,false);
-  tr("姓名",d.name,true);
-  tr2("身分證號",d.idNumber,"手機號碼",d.phone,false);
-  tr("電子郵件",d.email,true);
-  tr("戶籍地址",d.address,false);
-  tr2("申報類別",d.incomeType,"工會會員",d.unionMember,true);
-  y+=6;
-
-  // ── SIGNATURE ──
-  sec("申請人簽名","SIGNATURE");
-  fc(INK3); sc([50,50,65],0.3);
-  doc.rect(M,y,W-M*2,28,"FD");
-  if(d.signature&&d.signature.startsWith("data:image")){
-    try{
-      doc.addImage(d.signature,d.signature.includes("png")?"PNG":"JPEG",M+4,y+2,70,24);
-    }catch(e){ fnt(8);tc(GRAY);doc.text("（簽名無法嵌入）",M+4,y+15); }
-  } else { fnt(8);tc(GRAY);doc.text("（未簽名）",M+4,y+15); }
-  y+=32;y+=6;
-
-  // ── PAYMENT ──
-  sec("付款資訊","PAYMENT DETAILS");
-  tr2("銀行",d.bankName,"銀行代號",d.bankCode,false);
-  tr2("戶名",d.accountName,"帳號",d.accountNumber,true);
-  y+=4;
-
-  // ── BANK COVER ──
-  if(d.bankCover&&d.bankCover.startsWith("data:image")){
-    fc(INK3);sc([50,50,65],0.3);doc.rect(M,y,W-M*2,34,"FD");
-    fnt(7);tc(GRAY);doc.text("存摺封面",M+2,y+5);
-    try{doc.addImage(d.bankCover,d.bankCover.includes("png")?"PNG":"JPEG",M+22,y+2,55,30);}catch(e){}
-    y+=38;
-  }
-  y+=4;
-
-  // ── AMOUNT ──
-  sec("款項資訊","PROJECT & AMOUNT");
-  tr("專案名稱",d.projectName,false);
-  const amt=parseFloat(d.amount)||0;
-  const r = d.taxResult || calcTax(amt, d.incomeType||"9A 執行業務所得", d.nationality||"本國人");
-  const fmt = n => "NT$ " + n.toLocaleString();
-  const fmtP = p => (p*100).toFixed(2)+"%";
-
-  // 公司發放明細大框
-  fc(INK2); sc(GOLD,0.4); doc.rect(M,y,W-M*2,38,"FD");
-  fc(GOLD); doc.rect(M,y,3,38,"F");
-  fnt(7); tc([160,140,80]);
-  doc.text("公司應預扣及發放的金額",M+6,y+5.5);
-  sc([50,50,40],0.2);doc.line(M,y+7,W-M,y+7);
-
-  const rows4=[
-    ["所得金額", fmt(amt), false],
-    ["代扣所得稅"+(r.hasTax?"（"+fmtP(r.taxRate)+"）":"（免扣）"), r.hasTax?fmt(r.taxAmt):"$0", false],
-    ["代扣二代健保"+(r.hasNihi?"（"+fmtP(r.nihiRate)+"）":"（免扣）"), r.hasNihi?fmt(r.nihiAmt):"$0", false],
-    ["實際支付金額", fmt(r.netAmt), true],
-  ];
-  let ry=y+9;
-  rows4.forEach(([l,v,bold])=>{
-    fnt(7,bold?"bold":"normal");
-    tc(bold?GOLD2:[160,155,140]);
-    doc.text("★ "+l,M+6,ry);
-    fnt(8,bold?"bold":"normal");
-    tc(bold?GOLD2:OFFWHITE);
-    doc.text(v,W-M-2,ry,{align:"right"});
-    ry+=7;
+  generatePrintPDF({
+    name:          d.name,
+    idNumber:      d.idNumber,
+    email:         d.email,
+    phone:         d.phone,
+    address:       d.address,
+    nationality:   d.nationality,
+    incomeType:    d.incomeType,
+    unionMember:   d.unionMember,
+    bankName:      d.bankName,
+    bankCode:      d.bankCode,
+    accountName:   d.accountName,
+    accountNumber: d.accountNumber,
+    projectName:   d.projectName,
+    amount:        d.amount,
+    taxAmount:     d.taxAmount,
+    nihiAmount:    d.nihiAmount,
+    netAmount:     d.netAmount,
+    notes:         d.notes,
+    appId:         d.appId,
+    submittedAt:   d.submittedAt,
+    status:        "待審核",
+    signature:     d.signature || "",
+    idFront:       d.idFront   || "",
+    idBack:        d.idBack    || "",
+    bankCover:     d.bankCover || "",
   });
-  y+=42;
-
-  if(d.notes){tr("備註",d.notes,true);} y+=4;
-
-  // ── NEW PAGE for ID cards ──
-  doc.addPage();
-  fc(INK); doc.rect(0,0,W,297,"F");
-  fc(GOLD); doc.rect(0,0,3,297,"F");
-  y=18;
-
-  sec("身分證","NATIONAL ID CARD");
-  const iw=(W-M*2)/2-4, ih=44;
-
-  // ID Front
-  fc(INK2);sc([50,50,65],0.3);doc.rect(M,y,iw,ih+8,"FD");
-  fnt(7,"bold");tc(GOLD);doc.text("正面 FRONT",M+2,y+5.5);
-  sc([60,55,35],0.3);doc.line(M,y+7,M+iw,y+7);
-  if(d.idFront&&d.idFront.startsWith("data:image")){
-    try{doc.addImage(d.idFront,d.idFront.includes("png")?"PNG":"JPEG",M+1,y+8,iw-2,ih);}
-    catch(e){fnt(8);tc(GRAY);doc.text("（無法嵌入）",M+4,y+30);}
-  } else {fnt(8);tc(GRAY);doc.text("（未上傳）",M+4,y+30);}
-
-  // ID Back
-  const x2=M+iw+8;
-  fc(INK2);sc([50,50,65],0.3);doc.rect(x2,y,iw,ih+8,"FD");
-  fnt(7,"bold");tc(GOLD);doc.text("反面 BACK",x2+2,y+5.5);
-  sc([60,55,35],0.3);doc.line(x2,y+7,x2+iw,y+7);
-  if(d.idBack&&d.idBack.startsWith("data:image")){
-    try{doc.addImage(d.idBack,d.idBack.includes("png")?"PNG":"JPEG",x2+1,y+8,iw-2,ih);}
-    catch(e){fnt(8);tc(GRAY);doc.text("（無法嵌入）",x2+4,y+30);}
-  } else {fnt(8);tc(GRAY);doc.text("（未上傳）",x2+4,y+30);}
-  y+=ih+16;y+=8;
-
-  // ── STATUS ──
-  sec("申報狀態","DECLARATION STATUS");
-  tr2("付款完成","","申報完成","",false);
-  y+=6;
-
-  // ── FOOTER both pages ──
-  [1,2].forEach(pg => {
-    doc.setPage(pg);
-    fc(INK2); doc.rect(0,287,W,10,"F");
-    sc(GOLD,0.3); doc.line(0,287,W,287);
-    fnt(7); tc(GRAY);
-    doc.text("混合編碼工作室 勞務報酬單系統",M+4,293);
-    doc.text("列印時間："+new Date().toLocaleString("zh-TW"),W-M,293,{align:"right"});
-  });
-
-  doc.save("勞報單_"+d.name+"_"+d.appId+".pdf");
 }
+
+// ══════════════════════════════════════════════════════
+// 通用 HTML-to-Print PDF 產生器（前台後台共用邏輯）
+// 用法：generatePrintPDF(data) — data 結構見下方說明
+// ══════════════════════════════════════════════════════
+
+function generatePrintPDF(d) {
+  // d 必要欄位：
+  // name, idNumber, email, phone, address, nationality
+  // incomeType, unionMember
+  // bankName, bankCode, accountName, accountNumber
+  // projectName, amount, taxAmount, nihiAmount, netAmount
+  // notes, appId, submittedAt, status
+  // signature (dataURL or Drive URL or "")
+  // idFront, idBack, bankCover (dataURL or Drive URL or "")
+
+  const fmt = n => {
+    const num = parseFloat(n) || 0;
+    return "NT$ " + num.toLocaleString("zh-TW");
+  };
+
+  const imgTag = (src, alt, style="") => {
+    if (!src || src === "（無簽名）" || src === "") {
+      return `<div class="no-img">（未上傳）</div>`;
+    }
+    // Drive 連結轉 thumbnail
+    if (src.includes("drive.google.com/file/d/")) {
+      const m = src.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (m) src = `https://drive.google.com/thumbnail?id=${m[1]}&sz=w600`;
+    }
+    return `<img src="${src}" alt="${alt}" style="${style}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="img-err" style="display:none">（圖片載入失敗，請確認 Drive 連結）</div>`;
+  };
+
+  const html = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<title>勞務報酬單 ${d.appId || ""}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    font-size: 12px;
+    color: #1A1A1A;
+    background: white;
+    padding: 0;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 14mm 14mm 12mm;
+    position: relative;
+    background: white;
+  }
+
+  /* ── Header ── */
+  .hdr {
+    background: #2C2416;
+    color: white;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 0;
+    border-bottom: 3px solid #B8860B;
+  }
+  .hdr-left h1 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #F0E6C8;
+    letter-spacing: 2px;
+  }
+  .hdr-left p {
+    font-size: 9px;
+    color: rgba(240,230,200,0.6);
+    margin-top: 2px;
+    letter-spacing: 1px;
+  }
+  .hdr-right {
+    text-align: right;
+    font-size: 9px;
+    color: rgba(240,230,200,0.6);
+    line-height: 1.8;
+  }
+  .hdr-right .app-id {
+    font-size: 11px;
+    font-weight: 600;
+    color: #F0E6C8;
+  }
+
+  /* ── Section ── */
+  .section { margin-bottom: 10px; }
+  .section-title {
+    background: #2C2416;
+    color: #F0E6C8;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    padding: 5px 10px;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-title::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 12px;
+    background: #B8860B;
+    flex-shrink: 0;
+  }
+
+  /* ── Table ── */
+  .info-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 0.5px solid #D0C9BB;
+  }
+  .info-table td {
+    padding: 5px 8px;
+    font-size: 11px;
+    border-bottom: 0.5px solid #E0DBD0;
+    vertical-align: middle;
+  }
+  .info-table tr:last-child td { border-bottom: none; }
+  .info-table .lbl {
+    width: 28%;
+    background: #F5F3EE;
+    color: #666;
+    font-weight: 600;
+    font-size: 10px;
+  }
+  .info-table .val { color: #1A1A1A; }
+  .info-table .lbl2 {
+    width: 22%;
+    background: #F5F3EE;
+    color: #666;
+    font-weight: 600;
+    font-size: 10px;
+    border-left: 0.5px solid #D0C9BB;
+  }
+  .info-table .val2 {
+    width: 28%;
+    color: #1A1A1A;
+    border-left: none;
+  }
+
+  /* ── 金額區塊 ── */
+  .amount-block {
+    border: 0.5px solid #D0C9BB;
+    overflow: hidden;
+  }
+  .amount-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 10px;
+    border-bottom: 0.5px solid #E0DBD0;
+    font-size: 11px;
+  }
+  .amount-row:last-child { border-bottom: none; }
+  .amount-row .albl { color: #666; }
+  .amount-row .aval { font-weight: 600; color: #1A1A1A; }
+  .amount-row.total {
+    background: #FFF8E7;
+    border-top: 1.5px solid #B8860B;
+  }
+  .amount-row.total .albl { font-weight: 700; color: #8B6000; font-size: 12px; }
+  .amount-row.total .aval { font-weight: 700; color: #8B6000; font-size: 14px; }
+
+  /* ── 簽名 ── */
+  .sig-box {
+    border: 0.5px solid #D0C9BB;
+    background: #FAFAF7;
+    min-height: 55px;
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    overflow: hidden;
+  }
+  .sig-box img { max-height: 50px; max-width: 180px; }
+
+  /* ── 圖片區塊 ── */
+  .img-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    border: 0.5px solid #D0C9BB;
+    padding: 8px;
+  }
+  .img-item { }
+  .img-item .img-lbl {
+    font-size: 9px;
+    font-weight: 700;
+    color: #888;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .img-item img {
+    width: 100%;
+    max-height: 90px;
+    object-fit: cover;
+    border: 0.5px solid #D0C9BB;
+    border-radius: 3px;
+    display: block;
+  }
+  .img-item .img-err {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F5F5F5;
+    border: 0.5px dashed #CCC;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #AAA;
+  }
+  .img-item .no-img {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F5F5F5;
+    border: 0.5px dashed #CCC;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #AAA;
+  }
+
+  /* ── 存摺封面 ── */
+  .bank-cover-box {
+    border: 0.5px solid #D0C9BB;
+    padding: 6px;
+    text-align: center;
+    background: #FAFAF7;
+  }
+  .bank-cover-box img {
+    max-height: 80px;
+    max-width: 100%;
+    border: 0.5px solid #D0C9BB;
+    border-radius: 3px;
+  }
+
+  /* ── 狀態標籤 ── */
+  .status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FCD34D;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 12px;
+    border-top: 0.5px solid #D0C9BB;
+    padding-top: 6px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #999;
+  }
+
+  /* ── 列印設定 ── */
+  @media print {
+    body { margin: 0; }
+    .page { margin: 0; padding: 10mm 12mm 10mm; }
+    .no-print { display: none !important; }
+    @page { size: A4; margin: 0; }
+  }
+
+  /* ── 列印按鈕（只在螢幕顯示） ── */
+  .print-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #2C2416;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 999;
+  }
+  .print-bar span { color: #F0E6C8; font-size: 13px; }
+  .print-btn {
+    background: #B8860B;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .print-btn:hover { background: #A07009; }
+  body { padding-top: 46px; }
+  @media print { .print-bar { display: none; } body { padding-top: 0; } }
+</style>
+</head>
+<body>
+
+<div class="print-bar no-print">
+  <span>📄 勞務報酬單 — ${d.name || ""}　${d.appId || ""}</span>
+  <button class="print-btn" onclick="window.print()">🖨 列印 / 儲存 PDF</button>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <h1>混合編碼工作室</h1>
+      <p>MIXCODE STUDIO · LABOUR REMUNERATION REPORT</p>
+    </div>
+    <div class="hdr-right">
+      <div class="app-id">${d.appId || "—"}</div>
+      <div>${d.submittedAt || ""}</div>
+      <div><span class="status-badge">${d.status || "待審核"}</span></div>
+    </div>
+  </div>
+
+  <!-- 基本資訊 -->
+  <div class="section">
+    <div class="section-title">基本資訊</div>
+    <table class="info-table">
+      <tr>
+        <td class="lbl">姓名</td>
+        <td class="val">${d.name || "—"}</td>
+        <td class="lbl2">身分證號</td>
+        <td class="val2">${d.idNumber || "—"}</td>
+      </tr>
+      <tr>
+        <td class="lbl">電子郵件</td>
+        <td class="val">${d.email || "—"}</td>
+        <td class="lbl2">手機號碼</td>
+        <td class="val2">${d.phone || "—"}</td>
+      </tr>
+      <tr>
+        <td class="lbl">戶籍地址</td>
+        <td class="val" colspan="3">${d.address || "（未填）"}</td>
+      </tr>
+      <tr>
+        <td class="lbl">身分</td>
+        <td class="val">${d.nationality || "本國人"}</td>
+        <td class="lbl2">職業工會會員</td>
+        <td class="val2">${d.unionMember || "—"}</td>
+      </tr>
+      <tr>
+        <td class="lbl">申報類別</td>
+        <td class="val" colspan="3">${d.incomeType || "—"}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 簽名 -->
+  <div class="section">
+    <div class="section-title">申請人簽名</div>
+    <div class="sig-box">
+      ${imgTag(d.signature, "簽名")}
+    </div>
+  </div>
+
+  <!-- 付款資訊 -->
+  <div class="section">
+    <div class="section-title">付款帳戶</div>
+    <table class="info-table">
+      <tr>
+        <td class="lbl">銀行名稱</td>
+        <td class="val">${d.bankName || "—"}</td>
+        <td class="lbl2">銀行代號</td>
+        <td class="val2">${d.bankCode || "—"}</td>
+      </tr>
+      <tr>
+        <td class="lbl">戶名</td>
+        <td class="val">${d.accountName || "—"}</td>
+        <td class="lbl2">帳號</td>
+        <td class="val2">${d.accountNumber || "—"}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 存摺封面 -->
+  ${(d.bankCover && d.bankCover !== "") ? `
+  <div class="section">
+    <div class="section-title">銀行存摺封面</div>
+    <div class="bank-cover-box">
+      ${imgTag(d.bankCover, "存摺封面", "max-height:80px;max-width:100%")}
+    </div>
+  </div>` : ""}
+
+  <!-- 款項 -->
+  <div class="section">
+    <div class="section-title">款項資訊</div>
+    <table class="info-table" style="margin-bottom:6px">
+      <tr>
+        <td class="lbl">專案名稱</td>
+        <td class="val" colspan="3">${d.projectName || "—"}</td>
+      </tr>
+    </table>
+    <div class="amount-block">
+      <div class="amount-row">
+        <span class="albl">所得金額（免填）</span>
+        <span class="aval">${fmt(d.amount)}</span>
+      </div>
+      <div class="amount-row">
+        <span class="albl">代扣所得稅（免填）</span>
+        <span class="aval">${fmt(d.taxAmount)}</span>
+      </div>
+      <div class="amount-row">
+        <span class="albl">代扣二代健保（免填）</span>
+        <span class="aval">${fmt(d.nihiAmount)}</span>
+      </div>
+      <div class="amount-row total">
+        <span class="albl">★ 實際領取金額</span>
+        <span class="aval">${fmt(d.netAmount)}</span>
+      </div>
+    </div>
+    ${d.notes ? `<div style="margin-top:6px;font-size:10px;color:#666;padding:4px 8px;background:#F9F8F6;border:0.5px solid #E0DBD0">備註：${d.notes}</div>` : ""}
+  </div>
+
+  <!-- 身分證 -->
+  <div class="section">
+    <div class="section-title">身分證</div>
+    <div class="img-grid">
+      <div class="img-item">
+        <div class="img-lbl">正面 FRONT</div>
+        ${imgTag(d.idFront, "身分證正面", "width:100%;max-height:90px;object-fit:cover")}
+      </div>
+      <div class="img-item">
+        <div class="img-lbl">反面 BACK</div>
+        ${imgTag(d.idBack, "身分證反面", "width:100%;max-height:90px;object-fit:cover")}
+      </div>
+    </div>
+  </div>
+
+  <!-- 申報狀態 -->
+  <div class="section">
+    <div class="section-title">申報狀態</div>
+    <table class="info-table">
+      <tr>
+        <td class="lbl">付款完成（免填）</td>
+        <td class="val"></td>
+        <td class="lbl2">申報完成</td>
+        <td class="val2"></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>混合編碼工作室 勞務報酬單系統</span>
+    <span>列印時間：${new Date().toLocaleString("zh-TW")}</span>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  // 圖片載入完成後自動調整
+  window.addEventListener("load", () => {
+    // 給圖片一點時間從 Drive 載入
+    setTimeout(() => {}, 2000);
+  });
+</script>
+</body>
+</html>`;
+
+  // 開新視窗
+  const win = window.open("", "_blank", "width=900,height=700");
+  win.document.write(html);
+  win.document.close();
+  // 等字體和圖片載入後提示列印
+  setTimeout(() => {
+    if (win && !win.closed) win.focus();
+  }, 1000);
+}
+
 
 // ══ SIGNATURE CANVAS ══
 let sigMode="draw", uploadedSigDataURL=null, isDrawing=false, lastX=0, lastY=0;
@@ -1363,9 +1687,13 @@ function handleSigUpload(e){
 }
 function removeSigUpload(){uploadedSigDataURL=null;document.getElementById("sigFile").value="";document.getElementById("uploadPreviewWrap").style.display="none";document.getElementById("uploadArea").style.display="block";}
 function getSignatureDataURL(){
-  if(sigMode==="upload")return uploadedSigDataURL;
-  const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  return Array.from(data).some((v,i)=>i%4===3&&v>0)?canvas.toDataURL("image/png"):null;
+  if(sigMode==="upload") return uploadedSigDataURL;
+  // 用 canvas 是否有 has-sig class 判斷（由 startDraw 加上）
+  // 再加上像素檢測雙重保險
+  if (!canvas.classList.contains("has-sig")) return null;
+  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  const hasInk = data.some((v,i) => i%4===3 && v>10);
+  return hasInk ? canvas.toDataURL("image/png") : null;
 }
 
 // ══ RESET ══
