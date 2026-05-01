@@ -492,7 +492,7 @@ textarea{resize:vertical;min-height:80px}
 // ║  ★ 填入你的 Apps Script 網址（只需改這裡）       ║
 // ║  格式：https://script.google.com/a/macros/...    ║
 // ╚══════════════════════════════════════════════════╝
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEPTRKm_Vy-uyyvLlY3BOJ2RfjHCQFSyN0qXM1uYNXNTiMvFgGKXaj6bjCxkPF3if55g/exec";
+const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 </script>
 
 <div class="loading-overlay" id="loadingOverlay">
@@ -1561,13 +1561,7 @@ function generatePrintPDF(d) {
   </div>
 
   <!-- 存摺封面 -->
-  ${(d.bankCover && d.bankCover !== "") ? `
-  <div class="section">
-    <div class="section-title">銀行存摺封面</div>
-    <div class="bank-cover-box">
-      ${imgTag(d.bankCover, "存摺封面", "max-height:80px;max-width:100%")}
-    </div>
-  </div>` : ""}
+  ${(d.bankCover && d.bankCover !== "") ? '<div class="section"><div class="section-title">銀行存摺封面</div><div class="bank-cover-box">' + imgTag(d.bankCover, "存摺封面", "max-height:80px;max-width:100%") + '</div></div>' : ""}
 
   <!-- 款項 -->
   <div class="section">
@@ -1596,7 +1590,7 @@ function generatePrintPDF(d) {
         <span class="aval">${fmt(d.netAmount)}</span>
       </div>
     </div>
-    ${d.notes ? `<div style="margin-top:6px;font-size:10px;color:#666;padding:4px 8px;background:#F9F8F6;border:0.5px solid #E0DBD0">備註：${d.notes}</div>` : ""}
+    ${d.notes ? '<div style="margin-top:6px;font-size:10px;color:#666;padding:4px 8px;background:#F9F8F6;border:0.5px solid #E0DBD0">備註：' + d.notes + '</div>' : ""}
   </div>
 
   <!-- 身分證 -->
@@ -1635,13 +1629,6 @@ function generatePrintPDF(d) {
 
 </div><!-- /page -->
 
-<scr"+"ipt>
-  // 圖片載入完成後自動調整
-  window.addEventListener("load", () => {
-    // 給圖片一點時間從 Drive 載入
-    setTimeout(() => {}, 2000);
-  });
-</scr"+"ipt>
 </body>
 </html>`;
 
@@ -1667,10 +1654,31 @@ function switchSigTab(mode) {
 }
 
 const canvas=document.getElementById("sigCanvas"), ctx=canvas.getContext("2d");
+
+// ── Canvas 尺寸修正：讓 canvas 實際像素 = 顯示大小 ──
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  // 重設畫筆樣式（resize 後會清除）
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+}
+// 初始化及視窗縮放時重設
+window.addEventListener("load", resizeCanvas);
+window.addEventListener("resize", () => {
+  const hadSig = canvas.classList.contains("has-sig");
+  resizeCanvas();
+  if (hadSig) canvas.classList.remove("has-sig"); // resize 後筆跡消失，重置狀態
+});
 function getPos(e,c){
-  const r=c.getBoundingClientRect(),sx=c.width/r.width,sy=c.height/r.height;
+  const r=c.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
   const s=e.touches?e.touches[0]:e;
-  return{x:(s.clientX-r.left)*sx,y:(s.clientY-r.top)*sy};
+  // 直接用 CSS 座標（ctx 已 scale(dpr,dpr)，所以不需要自己乘）
+  return{x:(s.clientX-r.left), y:(s.clientY-r.top)};
 }
 function startDraw(e){e.preventDefault();isDrawing=true;const p=getPos(e,canvas);lastX=p.x;lastY=p.y;canvas.classList.add("has-sig");}
 function draw(e){if(!isDrawing)return;e.preventDefault();const p=getPos(e,canvas);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.strokeStyle=document.getElementById("penColor").value;ctx.lineWidth=parseFloat(document.getElementById("penSize").value);ctx.lineCap="round";ctx.lineJoin="round";ctx.stroke();lastX=p.x;lastY=p.y;}
@@ -1688,12 +1696,9 @@ function handleSigUpload(e){
 function removeSigUpload(){uploadedSigDataURL=null;document.getElementById("sigFile").value="";document.getElementById("uploadPreviewWrap").style.display="none";document.getElementById("uploadArea").style.display="block";}
 function getSignatureDataURL(){
   if(sigMode==="upload") return uploadedSigDataURL;
-  // 用 canvas 是否有 has-sig class 判斷（由 startDraw 加上）
-  // 再加上像素檢測雙重保險
+  // has-sig 由 startDraw 觸發（滑鼠/觸控一按下就加），最可靠
   if (!canvas.classList.contains("has-sig")) return null;
-  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  const hasInk = data.some((v,i) => i%4===3 && v>10);
-  return hasInk ? canvas.toDataURL("image/png") : null;
+  return canvas.toDataURL("image/png");
 }
 
 // ══ RESET ══
