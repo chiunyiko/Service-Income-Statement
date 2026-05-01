@@ -3,1247 +3,1392 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>勞報單 — MixCode Studio</title>
+<title>勞務報酬單 — MixCode Studio</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --brand: #1a1a2e;
-    --brand-mid: #16213e;
-    --accent: #e94560;
-    --accent-light: #fde8ec;
-    --text: #1a1a2e;
-    --text-muted: #666;
-    --border: #e0e0e0;
-    --bg: #f5f5f0;
-    --white: #ffffff;
-    --success: #2d6a4f;
-    --success-bg: #d8f3dc;
-    --radius: 10px;
-    --shadow: 0 2px 16px rgba(0,0,0,0.08);
-  }
+:root{
+  /* 淺色主題 */
+  --bg:#F7F5F0;
+  --bg2:#FFFFFF;
+  --bg3:#F2EFE9;
+  --gold:#B8860B;
+  --gold2:#A0720A;
+  --gold-light:#FFF8E7;
+  --gold-border:#E8D5A0;
+  --text:#1A1A1A;
+  --text2:#555555;
+  --text3:#999999;
+  --border:#E0DBD0;
+  --border2:#D0C9BB;
+  --err:#C0392B;
+  --ok:#27704A;
+  --ok-bg:#EAF7EF;
+  --hdr:#2C2416;
+  --hdr-text:#F0E6C8;
+  --r:12px;
+  --shadow:0 2px 16px rgba(0,0,0,0.07);
+  --shadow2:0 4px 24px rgba(0,0,0,0.1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+body{
+  font-family:'Noto Sans TC',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+}
 
-  body {
-    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 0 0 80px;
-  }
+/* ══ HEADER ══ */
+.hdr{
+  position:sticky;top:0;z-index:200;
+  background:var(--hdr);
+  border-bottom:3px solid var(--gold);
+  padding:0 28px;
+  display:flex;align-items:center;gap:20px;
+  height:60px;
+}
+.hdr-logo{
+  font-family:'Cormorant Garamond',serif;
+  font-weight:400;
+  font-size:20px;
+  color:var(--gold-border);
+  letter-spacing:3px;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.hdr-logo span{color:rgba(240,230,200,0.5);font-size:12px;letter-spacing:1px;font-family:'Noto Sans TC',sans-serif;font-weight:300}
+.hdr-divider{width:1px;height:22px;background:rgba(240,230,200,0.2);flex-shrink:0}
+.hdr-sub{font-size:12px;color:rgba(240,230,200,0.6);letter-spacing:2px;font-weight:300}
 
-  /* ── Header ── */
-  .header {
-    background: var(--brand);
-    color: white;
-    padding: 28px 0 22px;
-    text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-  }
-  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: 2px; }
-  .header p { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+/* ══ STEPPER ══ */
+.stepper{
+  display:flex;align-items:center;justify-content:center;
+  padding:28px 28px 0;
+  gap:0;
+  max-width:600px;margin:0 auto;
+}
+.step-dot{
+  width:32px;height:32px;border-radius:50%;
+  border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:var(--text3);
+  cursor:pointer;transition:all .3s;flex-shrink:0;
+  background:var(--bg2);
+  position:relative;
+}
+.step-dot.active{border-color:var(--gold);color:var(--gold);background:var(--gold-light)}
+.step-dot.done{border-color:var(--ok);color:var(--ok);background:var(--ok-bg)}
+.step-dot.done::after{content:"✓";position:absolute;font-size:12px}
+.step-dot.done span{display:none}
+.step-line{flex:1;height:2px;background:var(--border);margin:0 8px}
+.step-line.done{background:var(--ok);opacity:.6}
+.step-label{font-size:10px;color:var(--text3);text-align:center;margin-top:6px;letter-spacing:0.5px}
+.step-label.active{color:var(--gold2);font-weight:600}
+.step-wrap{display:flex;flex-direction:column;align-items:center}
 
-  /* ── Progress bar ── */
-  .progress-wrap {
-    background: var(--brand-mid);
-    padding: 12px 24px;
-    display: flex;
-    gap: 0;
-  }
-  .step-tab {
-    flex: 1;
-    text-align: center;
-    font-size: 12px;
-    color: rgba(255,255,255,0.4);
-    padding: 6px 4px;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    user-select: none;
-  }
-  .step-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .step-tab.done { color: rgba(255,255,255,0.7); }
+/* ══ CONTAINER ══ */
+.wrap{max-width:600px;margin:0 auto;padding:28px 20px 80px}
 
-  /* ── Main layout ── */
-  .container { max-width: 700px; margin: 0 auto; padding: 24px 16px 0; }
+/* ══ CARD ══ */
+.card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  display:none;
+  box-shadow:var(--shadow);
+  animation:fadeUp .3s ease;
+}
+.card.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-  /* ── Section card ── */
-  .section-card {
-    background: var(--white);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    margin-bottom: 20px;
-    overflow: hidden;
-    display: none;
-  }
-  .section-card.active { display: block; }
+.card-head{
+  padding:18px 24px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;
+  background:var(--bg3);
+}
+.card-head-num{
+  font-family:'Cormorant Garamond',serif;
+  font-size:30px;font-weight:400;
+  color:var(--gold);
+  line-height:1;opacity:.7;
+}
+.card-head-title{font-size:15px;font-weight:600;letter-spacing:0.5px;color:var(--text)}
+.card-head-sub{font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:1px}
+.card-body{padding:24px}
 
-  .section-title {
-    background: var(--brand);
-    color: white;
-    padding: 14px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-title .icon { font-size: 16px; }
-  .section-body { padding: 20px; }
+/* ══ FIELDS ══ */
+.field{margin-bottom:20px;position:relative}
+.field:last-child{margin-bottom:0}
+.field label{
+  display:block;font-size:11px;font-weight:600;
+  color:var(--text2);letter-spacing:0.5px;
+  margin-bottom:7px;
+}
+.req{color:var(--err);margin-left:2px}
+.hint-tag{font-size:10px;color:var(--text3);font-weight:400;margin-left:4px}
 
-  /* ── Form fields ── */
-  .field { margin-bottom: 18px; }
-  .field label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-    letter-spacing: 0.5px;
-  }
-  .field label .req { color: var(--accent); margin-left: 3px; }
-  .field label .hint { font-weight: 400; font-size: 11px; color: #aaa; }
+input[type=text],input[type=email],input[type=tel],input[type=number],select,textarea{
+  width:100%;
+  background:var(--bg2);
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  padding:11px 14px;
+  font-size:14px;
+  font-family:'Noto Sans TC',sans-serif;
+  color:var(--text);
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;
+}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(184,134,11,0.12);
+}
+select option{background:white;color:var(--text)}
+textarea{resize:vertical;min-height:80px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 
-  input[type="text"],
-  input[type="email"],
-  input[type="tel"],
-  input[type="number"],
-  select,
-  textarea {
-    width: 100%;
-    padding: 11px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-size: 15px;
-    font-family: inherit;
-    color: var(--text);
-    background: white;
-    transition: border-color 0.2s;
-    outline: none;
-    -webkit-appearance: none;
-  }
-  input:focus, select:focus, textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
-  }
-  textarea { resize: vertical; min-height: 80px; }
+/* ══ RADIO ══ */
+.radio-group{display:flex;gap:10px;flex-wrap:wrap}
+.radio-opt{
+  flex:1;min-width:120px;
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  border:1.5px solid var(--border);
+  border-radius:8px;cursor:pointer;
+  transition:all .2s;font-size:13px;color:var(--text2);
+  background:var(--bg2);
+}
+.radio-opt input{display:none}
+.radio-dot{
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid var(--border2);flex-shrink:0;
+  transition:all .2s;
+}
+.radio-opt:has(input:checked) .radio-dot{
+  border-color:var(--gold);
+  background:var(--gold);
+  box-shadow:inset 0 0 0 3px white;
+}
+.radio-opt:has(input:checked){border-color:var(--gold-border);background:var(--gold-light);color:var(--text)}
 
-  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+/* ══ UPLOAD BOXES ══ */
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.upload-box,.upload-single{
+  border:2px dashed var(--border2);
+  border-radius:10px;
+  min-height:110px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;overflow:hidden;
+  background:var(--bg3);transition:all .2s;
+  text-align:center;padding:16px 10px;
+}
+.upload-box:hover,.upload-single:hover{border-color:var(--gold);background:var(--gold-light)}
+.upload-box input,.upload-single input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2}
+.ub-icon{font-size:22px}
+.ub-label{font-size:11px;color:var(--text2);margin-top:6px;font-weight:600}
+.ub-hint{font-size:10px;color:var(--text3);margin-top:3px}
+.upload-box.has-img,.upload-single.has-img{border-style:solid;border-color:var(--gold)}
+.upload-box.has-img img,.upload-single.has-img img{width:100%;height:110px;object-fit:cover;display:block;border-radius:8px;}
+.upload-single.has-img img{height:auto;max-height:120px;width:auto;max-width:100%}
+.ub-remove{
+  position:absolute;top:7px;right:7px;
+  background:rgba(0,0,0,0.55);color:white;
+  border:none;border-radius:50%;width:22px;height:22px;
+  font-size:11px;cursor:pointer;z-index:3;
+  display:flex;align-items:center;justify-content:center;
+}
 
-  /* ── Radio group ── */
-  .radio-group { display: flex; gap: 12px; flex-wrap: wrap; }
-  .radio-option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 14px;
-    flex: 1;
-    min-width: 120px;
-  }
-  .radio-option input[type="radio"] { display: none; }
-  .radio-option .dot {
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    border: 2px solid #ccc;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.2s;
-  }
-  .radio-option input:checked ~ .dot {
-    border-color: var(--accent);
-    background: var(--accent);
-    box-shadow: inset 0 0 0 3px white;
-  }
-  .radio-option:has(input:checked) {
-    border-color: var(--accent);
-    background: var(--accent-light);
-  }
+/* ══ PROJECT TAGS ══ */
+.project-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.proj-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--gold-light);border:1px solid var(--gold-border);
+  border-radius:20px;padding:5px 12px;
+  font-size:12px;color:var(--gold2);
+}
+.proj-tag button{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0;line-height:1}
+.proj-tag button:hover{color:var(--err)}
+.proj-add{display:flex;gap:8px;margin-top:4px}
+.proj-add input{flex:1}
+.proj-add-btn{
+  padding:11px 18px;background:var(--gold-light);border:1.5px solid var(--gold-border);
+  border-radius:8px;color:var(--gold2);cursor:pointer;font-size:18px;
+  flex-shrink:0;transition:all .2s;
+}
+.proj-add-btn:hover{background:var(--gold);color:white}
 
-  /* ── Amount display ── */
-  .amount-preview {
-    background: var(--brand);
-    border-radius: 8px;
-    padding: 16px 20px;
-    margin-top: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .amount-preview .label { color: rgba(255,255,255,0.6); font-size: 12px; }
-  .amount-preview .value { color: white; font-size: 22px; font-weight: 700; }
-  .amount-note { color: rgba(255,255,255,0.45); font-size: 11px; margin-top: 2px; }
+/* ══ AMOUNT BREAKDOWN ══ */
+.amt-preview{
+  margin-top:12px;
+  border:1.5px solid var(--gold-border);
+  border-radius:10px;
+  overflow:hidden;
+  display:none;
+}
+.amt-preview.show{display:block}
+.amt-section-title{
+  background:var(--hdr);
+  padding:9px 16px;
+  font-size:11px;font-weight:600;
+  color:var(--hdr-text);letter-spacing:0.5px;
+}
+.amt-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 16px;
+  border-bottom:1px solid var(--border);
+  font-size:13px;background:white;
+}
+.amt-row:last-child{border-bottom:none}
+.amt-label{color:var(--text2);font-size:12px;font-weight:500}
+.amt-val{font-weight:600;color:var(--text);font-size:13px}
+.amt-val.highlight{color:var(--gold2);font-size:15px;font-weight:700}
+.amt-val.zero{color:var(--text3);font-weight:400}
+.amt-row-total{
+  background:var(--gold-light) !important;
+  border-top:2px solid var(--gold-border) !important;
+  padding:12px 16px;
+}
+.amt-note-box{
+  background:#FFF8F0;
+  border-top:1px solid var(--gold-border);
+}
+.amt-note-title{
+  padding:10px 16px 6px;
+  font-size:10px;color:var(--text3);letter-spacing:0.5px;font-weight:600;
+  text-transform:uppercase;
+}
+.amt-rule-note{
+  font-size:11px;color:var(--text3);
+  padding:8px 16px 10px;
+  border-top:1px solid var(--border);
+  line-height:1.7;
+  background:var(--bg3);
+}
 
-  /* ── Multi-project ── */
-  .project-list { margin-bottom: 12px; }
-  .project-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #f9f9f9;
-    border-radius: 6px;
-    margin-bottom: 6px;
-    font-size: 13px;
-  }
-  .project-item .remove-btn {
-    margin-left: auto;
-    color: #aaa;
-    cursor: pointer;
-    font-size: 16px;
-    border: none;
-    background: none;
-    padding: 0 4px;
-    line-height: 1;
-  }
-  .project-item .remove-btn:hover { color: var(--accent); }
-  .add-project-btn {
-    border: 1.5px dashed var(--border);
-    background: transparent;
-    color: var(--text-muted);
-    border-radius: 8px;
-    padding: 10px;
-    width: 100%;
-    font-size: 13px;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .add-project-btn:hover { border-color: var(--accent); color: var(--accent); }
+/* ══ SIGNATURE ══ */
+.sig-tabs{display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.sig-tab{
+  flex:1;padding:9px;text-align:center;font-size:12px;font-weight:600;
+  cursor:pointer;background:transparent;color:var(--text3);border:none;
+  font-family:inherit;transition:all .2s;
+  border-right:1px solid var(--border);
+}
+.sig-tab:last-child{border-right:none}
+.sig-tab.active{background:var(--hdr);color:var(--hdr-text)}
+.sig-panel{display:none}
+.sig-panel.active{display:block}
+#sigCanvas{
+  width:100%;height:160px;
+  border:1.5px solid var(--border);border-radius:8px;
+  background:#FFFDF8;cursor:crosshair;display:block;
+  touch-action:none;transition:border-color .2s;
+}
+#sigCanvas.has-sig{border-color:var(--gold)}
+.sig-tools{display:flex;gap:10px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.sig-btn{
+  padding:6px 12px;border-radius:6px;font-size:11px;font-weight:500;
+  font-family:inherit;cursor:pointer;border:1.5px solid var(--border);
+  background:white;color:var(--text2);transition:all .2s;
+}
+.sig-btn:hover{border-color:var(--gold);color:var(--gold)}
+.sig-hint{font-size:10px;color:var(--text3);margin-left:auto}
+.sig-upload-area{
+  border:2px dashed var(--border2);border-radius:8px;
+  padding:28px 20px;text-align:center;cursor:pointer;
+  background:var(--bg3);transition:all .2s;position:relative;
+}
+.sig-upload-area:hover{border-color:var(--gold)}
+.sig-upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.sig-preview-wrap{margin-top:10px;display:none;position:relative}
+.sig-preview-wrap img{max-height:100px;max-width:100%;border-radius:6px;border:1.5px solid var(--gold-border);display:block;margin:0 auto}
+.sig-remove{position:absolute;top:-8px;right:-8px;width:22px;height:22px;background:var(--err);color:white;border-radius:50%;border:none;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
 
-  /* ── File upload ── */
-  .file-upload {
-    border: 2px dashed var(--border);
-    border-radius: 8px;
-    padding: 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-  }
-  .file-upload:hover { border-color: var(--accent); }
-  .file-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .file-upload .icon { font-size: 28px; }
-  .file-upload p { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
-  .file-name { font-size: 12px; color: var(--success); margin-top: 6px; font-weight: 600; }
+/* ══ REVIEW TABLE ══ */
+.review-wrap{border:1.5px solid var(--border);border-radius:10px;overflow:hidden}
+.review-row{display:grid;grid-template-columns:36% 64%;border-bottom:1px solid var(--border)}
+.review-row:last-child{border-bottom:none}
+.rv-k{padding:10px 14px;font-size:11px;color:var(--text2);font-weight:600;background:var(--bg3);display:flex;align-items:center}
+.rv-v{padding:10px 14px;font-size:13px;color:var(--text);background:white}
 
-  /* ── Navigation buttons ── */
-  .nav-row {
-    display: flex;
-    gap: 12px;
-    justify-content: space-between;
-    margin-top: 24px;
-    padding-bottom: 8px;
-  }
-  .btn {
-    padding: 13px 28px;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-    letter-spacing: 0.5px;
-  }
-  .btn-secondary {
-    background: white;
-    color: var(--text-muted);
-    border: 1.5px solid var(--border);
-  }
-  .btn-primary {
-    background: var(--accent);
-    color: white;
-    flex: 1;
-  }
-  .btn-primary:hover { background: #c73652; transform: translateY(-1px); }
-  .btn-submit {
-    background: var(--brand);
-    color: white;
-    flex: 1;
-  }
-  .btn-submit:hover { background: #0d0d1f; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+/* ══ NAV BUTTONS ══ */
+.nav-row{display:flex;gap:10px;margin-top:24px}
+.btn{
+  padding:12px 22px;border-radius:8px;font-size:13px;font-weight:600;
+  font-family:inherit;cursor:pointer;border:none;transition:all .2s;
+  display:flex;align-items:center;gap:6px;
+}
+.btn-ghost{background:white;color:var(--text2);border:1.5px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.btn-gold{background:var(--hdr);color:var(--hdr-text);flex:1;justify-content:center;font-weight:600}
+.btn-gold:hover{background:#3d3020;transform:translateY(-1px)}
+.btn-submit{background:var(--hdr);color:var(--hdr-text);flex:1;justify-content:center;font-weight:700;font-size:14px}
+.btn-submit:hover{background:#3d3020;transform:translateY(-1px)}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-dl{
+  background:var(--hdr);color:var(--hdr-text);
+  border:none;padding:12px 26px;border-radius:8px;font-size:14px;font-weight:600;
+  font-family:inherit;cursor:pointer;transition:all .2s;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn-dl:hover{background:#3d3020}
 
-  /* ── Review panel ── */
-  .review-table { width: 100%; border-collapse: collapse; }
-  .review-table tr td {
-    padding: 9px 12px;
-    font-size: 13px;
-    border-bottom: 1px solid #f0f0f0;
-    vertical-align: top;
-  }
-  .review-table tr td:first-child {
-    color: var(--text-muted);
-    width: 36%;
-    font-weight: 600;
-  }
-  .review-table tr:last-child td { border-bottom: none; }
+/* ══ ERROR ══ */
+.err-msg{
+  background:#FEF0EE;border-left:3px solid var(--err);
+  padding:10px 14px;font-size:12px;color:var(--err);
+  border-radius:0 6px 6px 0;margin-top:10px;display:none;
+}
+.err-msg.show{display:block}
 
-  /* ── Success state ── */
-  .success-screen {
-    display: none;
-    text-align: center;
-    padding: 60px 20px;
-    background: white;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    margin-top: 24px;
-  }
-  .success-screen.show { display: block; }
-  .success-icon { font-size: 60px; margin-bottom: 20px; }
-  .success-screen h2 { font-size: 22px; color: var(--success); margin-bottom: 12px; }
-  .success-screen p { color: var(--text-muted); font-size: 14px; line-height: 1.8; }
-  .success-id {
-    display: inline-block;
-    background: var(--brand);
-    color: white;
-    padding: 4px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 700;
-    margin-top: 16px;
-  }
+/* ══ SUCCESS ══ */
+.success-screen{
+  display:none;text-align:center;
+  padding:56px 20px;background:var(--bg2);
+  border:1px solid var(--border);border-radius:var(--r);
+  box-shadow:var(--shadow);
+}
+.success-screen.show{display:block;animation:fadeUp .4s ease}
+.success-mark{
+  width:68px;height:68px;border-radius:50%;
+  background:var(--ok-bg);border:2px solid var(--ok);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;margin:0 auto 18px;color:var(--ok);
+}
+.success-screen h2{font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.success-screen p{font-size:13px;color:var(--text2);line-height:1.8}
+.success-id{
+  display:inline-block;background:var(--gold-light);
+  border:1px solid var(--gold-border);color:var(--gold2);
+  padding:5px 16px;border-radius:20px;font-size:12px;
+  font-weight:700;margin-top:14px;letter-spacing:1px;
+}
+.success-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px}
 
-  /* ── Error ── */
-  .error-msg {
-    background: #fde8ec;
-    border-left: 3px solid var(--accent);
-    padding: 10px 14px;
-    font-size: 13px;
-    color: #c73652;
-    border-radius: 0 6px 6px 0;
-    margin-top: 8px;
-    display: none;
-  }
-  .error-msg.show { display: block; }
+/* ══ LOADING ══ */
+.loading-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(44,36,22,0.7);backdrop-filter:blur(6px);
+  z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+.loading-overlay.show{display:flex}
+.spinner{
+  width:40px;height:40px;
+  border:3px solid rgba(240,230,200,0.2);
+  border-top-color:var(--hdr-text);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay p{font-size:13px;color:var(--hdr-text);letter-spacing:1px}
 
-  /* ── Signature ── */
-  .sig-tabs {
-    display: flex;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 12px;
-  }
-  .sig-tab {
-    flex: 1;
-    padding: 10px;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: white;
-    color: var(--text-muted);
-    border: none;
-    font-family: inherit;
-    transition: all 0.2s;
-    border-right: 1.5px solid var(--border);
-  }
-  .sig-tab:last-child { border-right: none; }
-  .sig-tab.active { background: var(--brand); color: white; }
+/* ══ DECORATIVE LINE ══ */
+.deco-line{
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-border),transparent);
+  margin:6px 0 22px;
+}
 
-  .sig-panel { display: none; }
-  .sig-panel.active { display: block; }
+/* ══ RAGIC-STYLE AMOUNT BLOCK ══ */
+.amount-input-row{
+  display:flex;align-items:center;gap:12px;
+}
+.amount-input-row input[type=number]{flex:1}
 
-  #sigCanvas {
-    width: 100%;
-    height: 180px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    background: #fafafa;
-    cursor: crosshair;
-    display: block;
-    touch-action: none;
-  }
-  #sigCanvas.has-sig { border-color: var(--accent); background: white; }
+.isnet-check{
+  display:flex;align-items:center;gap:7px;
+  cursor:pointer;flex-shrink:0;
+  padding:10px 14px;
+  border:1.5px solid var(--border);border-radius:8px;
+  background:white;transition:all .2s;
+  white-space:nowrap;
+}
+.isnet-check:hover{border-color:var(--gold-border)}
+.isnet-check input{display:none}
+.isnet-box{
+  width:16px;height:16px;border-radius:4px;
+  border:2px solid var(--border2);flex-shrink:0;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;
+  background:white;
+}
+.isnet-check:has(input:checked) .isnet-box{
+  background:var(--gold);border-color:var(--gold);
+}
+.isnet-check:has(input:checked) .isnet-box::after{
+  content:"✓";color:white;font-size:11px;font-weight:700;
+}
+.isnet-check:has(input:checked){border-color:var(--gold-border);background:var(--gold-light)}
+.isnet-text{font-size:13px;font-weight:600;color:var(--text2)}
+.isnet-check:has(input:checked) .isnet-text{color:var(--gold2)}
 
-  .sig-tools {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    align-items: center;
-  }
-  .sig-btn {
-    padding: 7px 14px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    border: 1.5px solid var(--border);
-    background: white;
-    color: var(--text-muted);
-    transition: all 0.2s;
-  }
-  .sig-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .sig-hint { font-size: 11px; color: #aaa; margin-left: auto; }
+.isnet-hint{
+  font-size:11px;color:var(--text3);margin-top:7px;
+  padding:7px 12px;background:var(--gold-light);
+  border-radius:6px;border:1px solid var(--gold-border);
+  display:none;line-height:1.5;
+}
+.isnet-hint.show{display:block}
+.isnet-hint strong{color:var(--gold2)}
 
-  .sig-upload-area {
-    border: 2px dashed var(--border);
-    border-radius: 8px;
-    padding: 28px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    background: #fafafa;
-  }
-  .sig-upload-area:hover { border-color: var(--accent); background: var(--accent-light); }
-  .sig-upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .sig-upload-area p { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
-  .sig-preview-wrap {
-    margin-top: 10px;
-    display: none;
-    position: relative;
-  }
-  .sig-preview-wrap img {
-    max-height: 120px;
-    max-width: 100%;
-    border-radius: 6px;
-    border: 1.5px solid var(--accent);
-    display: block;
-    margin: 0 auto;
-  }
-  .sig-remove {
-    position: absolute;
-    top: -8px; right: -8px;
-    width: 22px; height: 22px;
-    background: var(--accent);
-    color: white;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    font-size: 13px;
-    line-height: 22px;
-    text-align: center;
-    padding: 0;
-  }
+.ragic-block-title{
+  background:var(--hdr);
+  padding:9px 16px;
+  font-size:11px;font-weight:600;
+  color:var(--hdr-text);letter-spacing:0.5px;
+}
 
-  /* ── Signature preview in review ── */
-  .sig-review-img {
-    max-height: 80px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    margin-top: 4px;
-  }
+.ragic-amount-block{
+  margin-top:4px;margin-bottom:20px;
+  border:1.5px solid var(--border);
+  border-radius:10px;overflow:hidden;
+}
+.ragic-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:11px 16px;
+  border-bottom:1px solid var(--border);
+  background:white;
+}
+.ragic-label{font-size:13px;color:var(--text2)}
+.ragic-val{font-size:13px;font-weight:600;color:var(--text)}
+.ragic-row-net{
+  background:var(--gold-light) !important;
+  border-top:2px solid var(--gold-border) !important;
+  padding:13px 16px;
+}
+.ragic-label-net{font-size:13px;font-weight:700;color:var(--gold2)}
+.ragic-val-net{font-size:18px;font-weight:700;color:var(--gold2)}
+.ragic-note-block{
+  background:#FFF8F0;
+  border-top:1px dashed var(--gold-border);
+}
+.ragic-note-title{
+  padding:10px 16px 4px;
+  font-size:10px;color:var(--text3);font-weight:700;letter-spacing:0.5px;
+  text-transform:uppercase;
+}
+.ragic-note-block .ragic-row{background:#FFF8F0}
+.ragic-rule{
+  font-size:11px;color:var(--text3);padding:8px 16px 10px;
+  border-top:1px solid var(--border);background:var(--bg3);line-height:1.7;
+}
 
-  .btn-pdf {
-    background: #2d6a4f;
-    color: white;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 15px;
-    padding: 13px 28px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-    margin-top: 4px;
-  }
-  .btn-pdf:hover { background: #1b4332; transform: translateY(-1px); }
-  .btn-pdf:active { transform: scale(0.98); }
-
-  /* ── Loading overlay ── */
-  .loading-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(26, 26, 46, 0.7);
-    z-index: 999;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 16px;
-  }
-  .loading-overlay.show { display: flex; }
-  .spinner {
-    width: 44px; height: 44px;
-    border: 4px solid rgba(255,255,255,0.2);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-overlay p { color: white; font-size: 14px; }
-
-  @media (max-width: 500px) {
-    .field-row { grid-template-columns: 1fr; }
-    .radio-group { flex-direction: column; }
-  }
+@media(max-width:500px){
+  .field-row{grid-template-columns:1fr}
+  .radio-group{flex-direction:column}
+  .hdr-sub,.hdr-divider{display:none}
+}
 </style>
 </head>
 <body>
 
-<!-- ── IMPORTANT: 填入你的 Apps Script 網址 ── -->
 <script>
-// ★ 部署 Apps Script 後，將網址貼在這裡
+// ╔══════════════════════════════════════════════════╗
+// ║  ★ 填入你的 Apps Script 網址（只需改這裡）       ║
+// ║  格式：https://script.google.com/a/macros/...    ║
+// ╚══════════════════════════════════════════════════╝
 const APPS_SCRIPT_URL = "https://script.google.com/a/macros/mixcode.tv/s/AKfycbzEPTRKm_Vy-uyyvLlY3BOJ2RfjHCQFSyN0qXM1uYNXNTiMvFgGKXaj6bjCxkPF3if55g/exec";
 </script>
 
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
-  <p>送出中，請稍候…</p>
+  <p>SUBMITTING</p>
 </div>
 
-<div class="header">
-  <h1>混合編碼工作室</h1>
-  <p>勞務報酬單申請系統</p>
+<!-- ══ HEADER ══ -->
+<header class="hdr">
+  <div class="hdr-logo">MixCode<br><span>STUDIO</span></div>
+  <div class="hdr-divider"></div>
+  <div class="hdr-sub">勞務報酬單申請系統</div>
+</header>
+
+<!-- ══ STEPPER ══ -->
+<div class="stepper">
+  <div class="step-wrap">
+    <div class="step-dot active" id="tab1" onclick="goToStep(1)"><span>1</span></div>
+    <div class="step-label active" id="tlabel1">基本資訊</div>
+  </div>
+  <div class="step-line" id="line1"></div>
+  <div class="step-wrap">
+    <div class="step-dot" id="tab2" onclick="goToStep(2)"><span>2</span></div>
+    <div class="step-label" id="tlabel2">銀行帳戶</div>
+  </div>
+  <div class="step-line" id="line2"></div>
+  <div class="step-wrap">
+    <div class="step-dot" id="tab3" onclick="goToStep(3)"><span>3</span></div>
+    <div class="step-label" id="tlabel3">款項資訊</div>
+  </div>
+  <div class="step-line" id="line3"></div>
+  <div class="step-wrap">
+    <div class="step-dot" id="tab4" onclick="goToStep(4)"><span>4</span></div>
+    <div class="step-label" id="tlabel4">確認送出</div>
+  </div>
 </div>
 
-<div class="progress-wrap">
-  <div class="step-tab active" id="tab1" onclick="goToStep(1)">① 基本資訊</div>
-  <div class="step-tab" id="tab2" onclick="goToStep(2)">② 銀行帳戶</div>
-  <div class="step-tab" id="tab3" onclick="goToStep(3)">③ 款項資訊</div>
-  <div class="step-tab" id="tab4" onclick="goToStep(4)">④ 確認送出</div>
+<div class="wrap">
+
+<!-- ══ STEP 1 ══ -->
+<div class="card active" id="step1">
+  <div class="card-head">
+    <div class="card-head-num">01</div>
+    <div class="card-head-info">
+      <div class="card-head-title">基本資訊</div>
+      <div class="card-head-sub">PERSONAL INFORMATION</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="deco-line"></div>
+
+    <div class="field">
+      <label>身分 <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-opt">
+          <input type="radio" name="nationality" value="本國人" checked onchange="updateAmountPreview()">
+          <span class="radio-dot"></span>本國人
+        </label>
+        <label class="radio-opt">
+          <input type="radio" name="nationality" value="外國人" onchange="updateAmountPreview()">
+          <span class="radio-dot"></span>外國人
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>姓名 <span class="req">*</span></label>
+      <input type="text" id="name" placeholder="請輸入真實姓名">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>身分證號 <span class="req">*</span></label>
+        <input type="text" id="idNumber" placeholder="A123456789" maxlength="10">
+      </div>
+      <div class="field">
+        <label>手機號碼 <span class="req">*</span></label>
+        <input type="tel" id="phone" placeholder="09xx-xxx-xxx">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>電子郵件 <span class="req">*</span></label>
+      <input type="email" id="email" placeholder="your@email.com">
+    </div>
+
+    <div class="field">
+      <label>戶籍地址</label>
+      <input type="text" id="address" placeholder="縣市 · 鄉鎮 · 路 · 號">
+    </div>
+
+    <div class="field">
+      <label>申報類別 <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-opt">
+          <input type="radio" name="incomeType" value="9A 執行業務所得" checked onchange="updateAmountPreview()">
+          <span class="radio-dot"></span>9A 執行業務所得
+        </label>
+        <label class="radio-opt">
+          <input type="radio" name="incomeType" value="9B 稿費" onchange="updateAmountPreview()">
+          <span class="radio-dot"></span>9B 稿費
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>職業工會會員</label>
+      <div class="radio-group">
+        <label class="radio-opt">
+          <input type="radio" name="unionMember" value="是">
+          <span class="radio-dot"></span>是
+        </label>
+        <label class="radio-opt">
+          <input type="radio" name="unionMember" value="否" checked>
+          <span class="radio-dot"></span>否
+        </label>
+      </div>
+    </div>
+
+    <div id="errStep1" class="err-msg">請填寫所有必填欄位</div>
+    <div class="nav-row">
+      <button class="btn btn-gold" onclick="nextStep(1)">銀行帳戶 →</button>
+    </div>
+  </div>
 </div>
 
-<div class="container">
+<!-- ══ STEP 2 ══ -->
+<div class="card" id="step2">
+  <div class="card-head">
+    <div class="card-head-num">02</div>
+    <div class="card-head-info">
+      <div class="card-head-title">付款資訊</div>
+      <div class="card-head-sub">PAYMENT & IDENTITY</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="deco-line"></div>
 
-  <!-- ========= STEP 1：基本資訊 ========= -->
-  <div class="section-card active" id="step1">
-    <div class="section-title"><span class="icon">👤</span> 基本資訊</div>
-    <div class="section-body">
-
+    <div class="field-row">
       <div class="field">
-        <label>姓名 <span class="req">*</span></label>
-        <input type="text" id="name" placeholder="請輸入真實姓名">
+        <label>銀行名稱 <span class="req">*</span></label>
+        <select id="bankName">
+          <option value="">請選擇</option>
+          <option>台灣銀行</option><option>合作金庫</option><option>第一銀行</option>
+          <option>華南銀行</option><option>彰化銀行</option><option>玉山銀行</option>
+          <option>台北富邦</option><option>國泰世華</option><option>中國信託</option>
+          <option>台新銀行</option><option>永豐銀行</option><option>兆豐銀行</option>
+          <option>郵局（中華郵政）</option>
+        </select>
       </div>
+      <div class="field">
+        <label>銀行代號 <span class="req">*</span></label>
+        <input type="text" id="bankCode" placeholder="例：012" maxlength="4">
+      </div>
+    </div>
 
-      <div class="field-row">
-        <div class="field">
-          <label>身分證號 <span class="req">*</span></label>
-          <input type="text" id="idNumber" placeholder="A123456789" maxlength="10">
+    <div class="field-row">
+      <div class="field">
+        <label>戶名 <span class="req">*</span></label>
+        <input type="text" id="accountName" placeholder="與身分證同名">
+      </div>
+      <div class="field">
+        <label>帳號 <span class="req">*</span></label>
+        <input type="text" id="accountNumber" placeholder="請輸入完整帳號">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>身分證正反面 <span class="req">*</span></label>
+      <div class="upload-grid">
+        <div class="upload-box" id="idFrontBox">
+          <input type="file" accept="image/*" onchange="handleImgUpload(event,'idFront','idFrontBox')">
+          <div class="ub-icon">🪪</div>
+          <div class="ub-label">正面</div>
+          <div class="ub-hint">點擊上傳</div>
         </div>
-        <div class="field">
-          <label>手機號碼 <span class="req">*</span></label>
-          <input type="tel" id="phone" placeholder="09xx-xxx-xxx">
+        <div class="upload-box" id="idBackBox">
+          <input type="file" accept="image/*" onchange="handleImgUpload(event,'idBack','idBackBox')">
+          <div class="ub-icon">🪪</div>
+          <div class="ub-label">反面</div>
+          <div class="ub-hint">點擊上傳</div>
         </div>
       </div>
+    </div>
 
-      <div class="field">
-        <label>電子郵件 <span class="req">*</span></label>
-        <input type="email" id="email" placeholder="your@email.com">
+    <div class="field">
+      <label>銀行存摺封面 <span class="req">*</span> <span class="hint-tag">供審核核對帳號</span></label>
+      <div class="upload-single" id="bankCoverBox">
+        <input type="file" accept="image/*" onchange="handleImgUpload(event,'bankCover','bankCoverBox')">
+        <div class="ub-icon">🏦</div>
+        <div class="ub-label">上傳銀行存摺封面</div>
+        <div class="ub-hint">點擊或拖曳</div>
       </div>
+    </div>
 
-      <div class="field">
-        <label>戶籍地址</label>
-        <input type="text" id="address" placeholder="縣市、鄉鎮、路、號">
+    <div id="errStep2" class="err-msg">請填寫所有必填欄位並上傳身分證及存摺封面</div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="prevStep(2)">← 返回</button>
+      <button class="btn btn-gold" onclick="nextStep(2)">款項資訊 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 3 ══ -->
+<div class="card" id="step3">
+  <div class="card-head">
+    <div class="card-head-num">03</div>
+    <div class="card-head-info">
+      <div class="card-head-title">款項資訊</div>
+      <div class="card-head-sub">PROJECT & AMOUNT</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="deco-line"></div>
+
+    <div class="field">
+      <label>專案名稱 <span class="req">*</span> <span class="hint-tag">可多個</span></label>
+      <div class="project-list" id="projectList"></div>
+      <div class="proj-add">
+        <input type="text" id="projectInput" placeholder="輸入專案名稱後按 Enter 或 ＋">
+        <button class="proj-add-btn" onclick="addProject()">＋</button>
       </div>
+    </div>
 
-      <div class="field">
-        <label>申報類別 <span class="req">*</span></label>
-        <div class="radio-group">
-          <label class="radio-option">
-            <input type="radio" name="incomeType" value="9A 執行業務所得" checked>
-            <span class="dot"></span>
-            9A 執行業務所得
+    <!-- 款項欄位：仿 Simpany/Ragic 格式 -->
+    <div class="field">
+      <label>金額 <span class="req">*</span></label>
+      <div class="amount-input-row">
+        <input type="number" id="amount" placeholder="0" min="0" step="1" oninput="updateAmountPreview()">
+        <label class="isnet-check" id="isNetLabel">
+          <input type="checkbox" id="isNetAmount" onchange="updateAmountPreview()">
+          <span class="isnet-box" id="isNetBox"></span>
+          <span class="isnet-text">實領金額</span>
+        </label>
+      </div>
+      <div class="isnet-hint" id="isNetHint">
+        勾選後：填入的是員工<strong>實際到手</strong>金額，系統自動反推所得金額
+      </div>
+    </div>
+
+    <div class="ragic-amount-block" id="ragicAmountBlock" style="display:none">
+      <div class="ragic-block-title" id="ragicBlockTitle">公司應預扣及發放的金額</div>
+      <div class="ragic-row">
+        <span class="ragic-label" id="lblIncome">所得金額（免填）</span>
+        <span class="ragic-val" id="ragicIncome">$0</span>
+      </div>
+      <div class="ragic-row">
+        <span class="ragic-label">代扣所得稅（免填）</span>
+        <span class="ragic-val" id="ragicTax">$0</span>
+      </div>
+      <div class="ragic-row">
+        <span class="ragic-label">代扣二代健保（免填）</span>
+        <span class="ragic-val" id="ragicNihi">$0</span>
+      </div>
+      <div class="ragic-row ragic-row-net">
+        <span class="ragic-label-net" id="lblNet">★ 實際支付金額</span>
+        <span class="ragic-val-net" id="ragicNet">$0</span>
+      </div>
+      <div class="ragic-note-block">
+        <div class="ragic-note-title">補充：對所得人個人所得的影響</div>
+        <div class="ragic-row">
+          <span class="ragic-label">所得金額</span>
+          <span class="ragic-val" id="ragicPersonal">$0</span>
+        </div>
+        <div class="ragic-row">
+          <span class="ragic-label" id="ragicExpLabel">費用率</span>
+          <span class="ragic-val" id="ragicExpRate">0%</span>
+        </div>
+        <div class="ragic-row">
+          <span class="ragic-label">計入所得淨額</span>
+          <span class="ragic-val" id="ragicPersonalNet">$0</span>
+        </div>
+      </div>
+      <div class="ragic-rule" id="ragicRule"></div>
+    </div>
+
+    <div class="field">
+      <label>備註</label>
+      <textarea id="notes" placeholder="如有特殊說明請填於此處…"></textarea>
+    </div>
+
+    <div class="field">
+      <label>親簽 <span class="req">*</span> <span class="hint-tag">手寫或上傳簽名圖片</span></label>
+      <div class="sig-tabs">
+        <button class="sig-tab active" onclick="switchSigTab('draw')">✍ 手寫簽名</button>
+        <button class="sig-tab" onclick="switchSigTab('upload')">↑ 上傳圖片</button>
+      </div>
+      <div class="sig-panel active" id="panelDraw">
+        <canvas id="sigCanvas" width="660" height="160"></canvas>
+        <div class="sig-tools">
+          <button class="sig-btn" onclick="clearCanvas()">清除重簽</button>
+          <label style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px;cursor:pointer">
+            粗細 <input type="range" id="penSize" min="1" max="8" value="2" style="width:60px;accent-color:var(--gold)">
           </label>
-          <label class="radio-option">
-            <input type="radio" name="incomeType" value="9B 稿費">
-            <span class="dot"></span>
-            9B 稿費
+          <label style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px;cursor:pointer">
+            顏色 <input type="color" id="penColor" value="#000000" style="width:24px;height:24px;border:none;background:none;cursor:pointer;padding:0">
           </label>
+          <span class="sig-hint">支援滑鼠或觸控</span>
         </div>
       </div>
-
-      <div class="field">
-        <label>職業工會會員</label>
-        <div class="radio-group">
-          <label class="radio-option">
-            <input type="radio" name="unionMember" value="是">
-            <span class="dot"></span>
-            是
-          </label>
-          <label class="radio-option">
-            <input type="radio" name="unionMember" value="否" checked>
-            <span class="dot"></span>
-            否
-          </label>
+      <div class="sig-panel" id="panelUpload">
+        <div class="sig-upload-area" id="uploadArea">
+          <input type="file" id="sigFile" accept="image/*" onchange="handleSigUpload(event)">
+          <div style="font-size:28px;opacity:.4">🖼</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:8px">點擊或拖曳簽名圖片</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px">JPG · PNG · GIF</div>
         </div>
-      </div>
-
-      <div id="errStep1" class="error-msg">請填寫所有必填欄位</div>
-      <div class="nav-row">
-        <button class="btn btn-primary" onclick="nextStep(1)">下一步：銀行帳戶 →</button>
+        <div class="sig-preview-wrap" id="uploadPreviewWrap">
+          <img id="uploadPreviewImg" src="" alt="簽名">
+          <button class="sig-remove" onclick="removeSigUpload()">✕</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ========= STEP 2：銀行帳戶 ========= -->
-  <div class="section-card" id="step2">
-    <div class="section-title"><span class="icon">🏦</span> 付款資訊</div>
-    <div class="section-body">
-
-      <div class="field-row">
-        <div class="field">
-          <label>銀行名稱 <span class="req">*</span></label>
-          <select id="bankName">
-            <option value="">請選擇</option>
-            <option>台灣銀行</option>
-            <option>合作金庫</option>
-            <option>第一銀行</option>
-            <option>華南銀行</option>
-            <option>彰化銀行</option>
-            <option>玉山銀行</option>
-            <option>台北富邦</option>
-            <option>國泰世華</option>
-            <option>中國信託</option>
-            <option>台新銀行</option>
-            <option>永豐銀行</option>
-            <option>兆豐銀行</option>
-            <option>郵局（中華郵政）</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>銀行代號 <span class="req">*</span></label>
-          <input type="text" id="bankCode" placeholder="例：012" maxlength="4">
-        </div>
-      </div>
-
-      <div class="field-row">
-        <div class="field">
-          <label>戶名 <span class="req">*</span></label>
-          <input type="text" id="accountName" placeholder="與身分證同名">
-        </div>
-        <div class="field">
-          <label>帳號 <span class="req">*</span></label>
-          <input type="text" id="accountNumber" placeholder="請輸入完整帳號">
-        </div>
-      </div>
-
-      <div id="errStep2" class="error-msg">請填寫所有必填欄位</div>
-      <div class="nav-row">
-        <button class="btn btn-secondary" onclick="prevStep(2)">← 上一步</button>
-        <button class="btn btn-primary" onclick="nextStep(2)">下一步：款項資訊 →</button>
-      </div>
+    <div id="errStep3" class="err-msg">請填寫所有必填欄位（含簽名）</div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="prevStep(3)">← 返回</button>
+      <button class="btn btn-gold" onclick="nextStep(3)">確認送出 →</button>
     </div>
   </div>
+</div>
 
-  <!-- ========= STEP 3：款項資訊 ========= -->
-  <div class="section-card" id="step3">
-    <div class="section-title"><span class="icon">💰</span> 款項資訊</div>
-    <div class="section-body">
-
-      <div class="field">
-        <label>專案名稱 <span class="req">*</span> <span class="hint">（可多個）</span></label>
-        <div class="project-list" id="projectList"></div>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="projectInput" placeholder="輸入專案名稱後點＋新增" style="flex:1">
-          <button onclick="addProject()" style="padding:11px 16px;background:var(--brand);color:white;border:none;border-radius:8px;cursor:pointer;font-size:18px;flex-shrink:0">＋</button>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>實際領取金額（元） <span class="req">*</span></label>
-        <input type="number" id="amount" placeholder="0" min="0" step="100"
-               oninput="updateAmountPreview()">
-        <div class="amount-preview" id="amountPreview" style="display:none">
-          <div>
-            <div class="label">實際領取</div>
-            <div class="value" id="amountDisplay">NT$ 0</div>
-          </div>
-          <div style="text-align:right">
-            <div class="label">參考扣款（估算）</div>
-            <div class="amount-note" id="taxNote">—</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>備註</label>
-        <textarea id="notes" placeholder="如有特殊說明，請填於此處"></textarea>
-      </div>
-
-      <!-- ── 簽名區塊 ── -->
-      <div class="field">
-        <label>親簽 <span class="req">*</span> <span class="hint">（手寫或上傳簽名圖片）</span></label>
-
-        <div class="sig-tabs">
-          <button class="sig-tab active" onclick="switchSigTab('draw')">✍️ 手寫簽名</button>
-          <button class="sig-tab" onclick="switchSigTab('upload')">📁 上傳圖片</button>
-        </div>
-
-        <!-- 手寫畫布 -->
-        <div class="sig-panel active" id="panelDraw">
-          <canvas id="sigCanvas" width="660" height="180"></canvas>
-          <div class="sig-tools">
-            <button class="sig-btn" onclick="clearCanvas()">清除重簽</button>
-            <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer">
-              粗細
-              <input type="range" id="penSize" min="1" max="8" value="2"
-                     style="width:70px;accent-color:var(--accent)">
-            </label>
-            <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer">
-              顏色
-              <input type="color" id="penColor" value="#000000"
-                     style="width:28px;height:28px;border:none;background:none;cursor:pointer;padding:0">
-            </label>
-            <span class="sig-hint">支援滑鼠或觸控</span>
-          </div>
-        </div>
-
-        <!-- 上傳圖片 -->
-        <div class="sig-panel" id="panelUpload">
-          <div class="sig-upload-area" id="uploadArea">
-            <input type="file" id="sigFile" accept="image/*" onchange="handleSigUpload(event)">
-            <div style="font-size:32px">🖼️</div>
-            <p>點擊或拖曳簽名圖片至此</p>
-            <p style="font-size:11px;color:#bbb;margin-top:4px">支援 JPG、PNG、GIF（建議白底黑字）</p>
-          </div>
-          <div class="sig-preview-wrap" id="uploadPreviewWrap">
-            <img id="uploadPreviewImg" src="" alt="簽名預覽">
-            <button class="sig-remove" onclick="removeSigUpload()">✕</button>
-          </div>
-        </div>
-      </div>
-
-      <div id="errStep3" class="error-msg">請填寫所有必填欄位（含簽名）</div>
-      <div class="nav-row">
-        <button class="btn btn-secondary" onclick="prevStep(3)">← 上一步</button>
-        <button class="btn btn-primary" onclick="nextStep(3)">下一步：確認送出 →</button>
-      </div>
+<!-- ══ STEP 4 ══ -->
+<div class="card" id="step4">
+  <div class="card-head">
+    <div class="card-head-num">04</div>
+    <div class="card-head-info">
+      <div class="card-head-title">確認送出</div>
+      <div class="card-head-sub">REVIEW & SUBMIT</div>
     </div>
   </div>
-
-  <!-- ========= STEP 4：確認 ========= -->
-  <div class="section-card" id="step4">
-    <div class="section-title"><span class="icon">✅</span> 確認資料無誤後送出</div>
-    <div class="section-body">
-      <table class="review-table" id="reviewTable"></table>
-      <div id="errStep4" class="error-msg">送出失敗，請確認網路後再試</div>
-      <div class="nav-row">
-        <button class="btn btn-secondary" onclick="prevStep(4)">← 返回修改</button>
-        <button class="btn btn-submit" id="submitBtn" onclick="submitForm()">確認送出勞報單</button>
-      </div>
+  <div class="card-body">
+    <div class="deco-line"></div>
+    <div class="review-wrap" id="reviewWrap"></div>
+    <div id="errStep4" class="err-msg">送出失敗，請確認網路後再試</div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="prevStep(4)">← 返回修改</button>
+      <button class="btn btn-submit" id="submitBtn" onclick="submitForm()">確認送出勞報單</button>
     </div>
   </div>
+</div>
 
-  <!-- ========= 成功畫面 ========= -->
-  <div class="success-screen" id="successScreen">
-    <div class="success-icon">🎉</div>
-    <h2>勞報單送出成功！</h2>
-    <p>資料已記錄至 Google Sheets<br>請靜候財務部門審核，如有問題將以 Email 通知</p>
-    <div class="success-id" id="successId"></div>
-    <br>
-    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px">
-      <button class="btn-pdf" onclick="downloadPDF()">
-        <span style="font-size:18px">📄</span> 下載 PDF 存檔
-      </button>
-      <button class="btn btn-secondary" onclick="resetForm()" style="display:inline-flex;width:auto;align-items:center">重新填寫</button>
-    </div>
+<!-- ══ SUCCESS ══ -->
+<div class="success-screen" id="successScreen">
+  <div class="success-mark">✦</div>
+  <h2>送出成功</h2>
+  <p>資料已記錄至 Google Sheets<br>請靜候財務部門審核</p>
+  <div class="success-id" id="successId"></div>
+  <div class="success-acts">
+    <button class="btn-dl" onclick="downloadPDF()">⬇ 下載 PDF</button>
+    <button class="btn btn-ghost" onclick="resetForm()" style="padding:13px 24px">重新填寫</button>
   </div>
+</div>
 
-</div><!-- /container -->
+</div><!-- /wrap -->
 
 <script>
-// ── 狀態 ──
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
 let projects = [];
 let currentStep = 1;
+let lastSubmittedData = null;
+const uploadedImages = { idFront:null, idBack:null, bankCover:null };
 
-// ── 多專案 ──
-function addProject() {
-  const input = document.getElementById("projectInput");
-  const name = input.value.trim();
-  if (!name) return;
-  projects.push(name);
-  renderProjects();
-  input.value = "";
-  input.focus();
-}
-document.getElementById("projectInput").addEventListener("keydown", e => {
-  if (e.key === "Enter") { e.preventDefault(); addProject(); }
-});
-
-function removeProject(i) {
-  projects.splice(i, 1);
-  renderProjects();
-}
-
-function renderProjects() {
-  const list = document.getElementById("projectList");
-  list.innerHTML = projects.map((p, i) => `
-    <div class="project-item">
-      <span style="font-size:14px">📁</span>
-      <span>${p}</span>
-      <button class="remove-btn" onclick="removeProject(${i})">✕</button>
-    </div>
-  `).join("");
-}
-
-// ── 金額預覽 ──
-function updateAmountPreview() {
-  const amt = parseFloat(document.getElementById("amount").value) || 0;
-  const preview = document.getElementById("amountPreview");
-  if (amt > 0) {
-    preview.style.display = "flex";
-    document.getElementById("amountDisplay").textContent = "NT$ " + amt.toLocaleString();
-    const tax = Math.round(amt * 0.1);
-    document.getElementById("taxNote").textContent = `所得稅約 NT$ ${tax.toLocaleString()}（依申報類別）`;
-  } else {
-    preview.style.display = "none";
-  }
-}
-
-// ── Step 驗證 ──
-function validateStep(step) {
-  const required = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return true;
-    return el.value.trim() !== "";
+// ══ IMAGE UPLOAD ══
+function handleImgUpload(e, key, boxId) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    uploadedImages[key] = ev.target.result;
+    const box = document.getElementById(boxId);
+    box.classList.add("has-img");
+    const old = box.querySelector("img"); if (old) old.remove();
+    const img = document.createElement("img");
+    img.src = ev.target.result;
+    box.insertBefore(img, box.querySelector("input").nextSibling);
+    box.querySelectorAll(".ub-icon,.ub-label,.ub-hint").forEach(el => el.style.display="none");
+    let rb = box.querySelector(".ub-remove");
+    if (!rb) {
+      rb = document.createElement("button"); rb.className="ub-remove"; rb.textContent="✕";
+      rb.onclick = ev2 => { ev2.stopPropagation(); ev2.preventDefault(); removeImg(key,boxId); };
+      box.appendChild(rb);
+    }
   };
-
-  if (step === 1) {
-    return required("name") && required("idNumber") && required("phone") && required("email");
-  }
-  if (step === 2) {
-    return required("bankName") && required("bankCode") && required("accountName") && required("accountNumber");
-  }
-  if (step === 3) {
-    return projects.length > 0 && required("amount") && !!getSignatureDataURL();
-  }
-  return true;
+  reader.readAsDataURL(file);
+}
+function removeImg(key, boxId) {
+  uploadedImages[key] = null;
+  const box = document.getElementById(boxId);
+  box.classList.remove("has-img");
+  const img = box.querySelector("img"); if (img) img.remove();
+  const rb  = box.querySelector(".ub-remove"); if (rb) rb.remove();
+  box.querySelectorAll(".ub-icon,.ub-label,.ub-hint").forEach(el => el.style.display="");
+  const inp = box.querySelector("input[type=file]"); if (inp) inp.value="";
 }
 
-// ── Navigation ──
-function nextStep(from) {
-  const err = document.getElementById(`errStep${from}`);
-  if (!validateStep(from)) {
-    err.classList.add("show");
-    return;
-  }
-  err.classList.remove("show");
-  if (from === 3) buildReview();
-  goToStep(from + 1);
+// ══ PROJECTS ══
+function addProject() {
+  const inp = document.getElementById("projectInput");
+  const n = inp.value.trim(); if (!n) return;
+  projects.push(n); renderProjects(); inp.value=""; inp.focus();
 }
-
-function prevStep(from) { goToStep(from - 1); }
-
-function goToStep(n) {
-  if (n < 1 || n > 4) return;
-  currentStep = n;
-  [1,2,3,4].forEach(i => {
-    document.getElementById(`step${i}`).classList.toggle("active", i === n);
-    const tab = document.getElementById(`tab${i}`);
-    tab.classList.toggle("active", i === n);
-    tab.classList.toggle("done", i < n);
-  });
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-// ── 建立審核表 ──
-function buildReview() {
-  const g = (id) => document.getElementById(id)?.value || "—";
-  const radioVal = (name) => document.querySelector(`input[name="${name}"]:checked`)?.value || "—";
-
-  const sigDataURL = getSignatureDataURL();
-  const rows = [
-    ["姓名", g("name")],
-    ["身分證號", g("idNumber")],
-    ["電子郵件", g("email")],
-    ["手機號碼", g("phone")],
-    ["戶籍地址", g("address") || "（未填）"],
-    ["申報類別", radioVal("incomeType")],
-    ["職業工會會員", radioVal("unionMember")],
-    ["銀行", `${g("bankName")} (${g("bankCode")})`],
-    ["戶名 / 帳號", `${g("accountName")} / ${g("accountNumber")}`],
-    ["專案名稱", projects.join("、") || "—"],
-    ["實際領取金額", `NT$ ${parseInt(g("amount")).toLocaleString()}`],
-    ["備註", g("notes") || "（無）"],
-    ["簽名", sigDataURL ? `<img src="${sigDataURL}" class="sig-review-img" alt="簽名">` : "（未簽名）"],
-  ];
-
-  document.getElementById("reviewTable").innerHTML = rows.map(([k, v]) =>
-    `<tr><td>${k}</td><td>${v}</td></tr>`
+document.getElementById("projectInput").addEventListener("keydown", e => { if (e.key==="Enter"){e.preventDefault();addProject();} });
+function removeProject(i) { projects.splice(i,1); renderProjects(); }
+function renderProjects() {
+  document.getElementById("projectList").innerHTML = projects.map((p,i) =>
+    `<div class="proj-tag"><span>📁 ${p}</span><button onclick="removeProject(${i})">✕</button></div>`
   ).join("");
 }
 
-// ── 送出 ──
-let lastSubmittedData = null; // 儲存最後一筆送出資料，供 PDF 使用
+// ══ TAIWAN TAX CALCULATION ══
+// isNet=false → 填的是所得金額，扣稅後給員工
+// isNet=true  → 填的是實際到手金額，反推所得金額（gross-up）
+//
+// 9A 本國人：< 2萬不扣；= 2萬只扣健保；> 2萬扣10%+2.11%
+// 9B 本國人：扣10%+2.11%
+// 外國人：扣20%，免健保
 
-async function submitForm() {
-  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("YOUR_")) {
-    alert("⚠️ 請先設定 APPS_SCRIPT_URL！\n\n在 HTML 頂部找到 const APPS_SCRIPT_URL，貼上你的 Apps Script 網址。");
-    return;
+function calcTax(inputAmt, incomeType, nationality, isNet) {
+  const isForeign = nationality === "外國人";
+  const is9B = incomeType.includes("9B");
+  let taxRate = 0, nihiRate = 0.0211;
+  let hasTax = false, hasNihi = false;
+  let expenseRate = 0, ruleNote = "";
+
+  // 先用 inputAmt 決定費率（如果是實領，需反推後再判斷，先假設再迭代）
+  function getRates(grossAmt) {
+    if (isForeign) {
+      return { hasTax:true, hasNihi:false, taxRate:0.20, nihiRate:0 };
+    } else if (is9B) {
+      return { hasTax:true, hasNihi:true, taxRate:0.10, nihiRate:0.0211 };
+    } else {
+      if (grossAmt < 20000)      return { hasTax:false, hasNihi:false, taxRate:0, nihiRate:0.0211 };
+      else if (grossAmt === 20000) return { hasTax:false, hasNihi:true,  taxRate:0, nihiRate:0.0211 };
+      else                         return { hasTax:true,  hasNihi:true,  taxRate:0.10, nihiRate:0.0211 };
+    }
   }
 
-  const radioVal = (name) => document.querySelector(`input[name="${name}"]:checked`)?.value || "";
-  const g = (id) => document.getElementById(id)?.value || "";
+  expenseRate = is9B ? 0.30 : 0;
 
+  let grossAmt, netAmt, taxAmt, nihiAmt;
+
+  if (!isNet) {
+    // 一般模式：輸入所得金額，計算扣款
+    grossAmt = inputAmt;
+    const rates = getRates(grossAmt);
+    hasTax = rates.hasTax; hasNihi = rates.hasNihi;
+    taxRate = rates.taxRate; nihiRate = rates.nihiRate;
+    taxAmt  = hasTax  ? Math.round(grossAmt * taxRate)  : 0;
+    nihiAmt = hasNihi ? Math.round(grossAmt * nihiRate) : 0;
+    netAmt  = grossAmt - taxAmt - nihiAmt;
+  } else {
+    // 實領模式：輸入到手金額，反推所得金額（gross-up）
+    // 先用到手金額估算費率，然後反推
+    netAmt = inputAmt;
+    // 迭代求解（最多 5 次收斂）
+    let guess = netAmt;
+    for (let i = 0; i < 5; i++) {
+      const rates = getRates(guess);
+      hasTax = rates.hasTax; hasNihi = rates.hasNihi;
+      taxRate = rates.taxRate; nihiRate = rates.nihiRate;
+      const totalRate = (hasTax ? taxRate : 0) + (hasNihi ? nihiRate : 0);
+      guess = totalRate > 0 ? Math.round(netAmt / (1 - totalRate)) : netAmt;
+    }
+    grossAmt = guess;
+    const finalRates = getRates(grossAmt);
+    hasTax = finalRates.hasTax; hasNihi = finalRates.hasNihi;
+    taxRate = finalRates.taxRate; nihiRate = finalRates.nihiRate;
+    taxAmt  = hasTax  ? Math.round(grossAmt * taxRate)  : 0;
+    nihiAmt = hasNihi ? Math.round(grossAmt * nihiRate) : 0;
+    netAmt  = grossAmt - taxAmt - nihiAmt;
+  }
+
+  // Rule note
+  if (isForeign) {
+    ruleNote = "外國人適用 20% 扣繳稅率，免扣二代健保補充保費。";
+  } else if (is9B) {
+    ruleNote = "9B 稿費：扣 10% 所得稅及 2.11% 二代健保。每年累計 18 萬元以下免稅（依年度申報）。";
+  } else {
+    if (grossAmt < 20000)       ruleNote = "單次給付低於 2 萬元：免扣所得稅，免扣二代健保補充保費。";
+    else if (grossAmt === 20000) ruleNote = "單次給付剛好 2 萬元：免扣所得稅，需扣 2.11% 二代健保補充保費。";
+    else                         ruleNote = "單次給付超過 2 萬元：扣 10% 所得稅及 2.11% 二代健保補充保費。";
+  }
+  if (isNet) ruleNote = "【實領模式】" + ruleNote;
+
+  const personalNet = Math.round(grossAmt * (1 - expenseRate));
+  return { grossAmt, taxAmt, nihiAmt, netAmt, hasTax, hasNihi,
+           taxRate, nihiRate, expenseRate, personalNet, ruleNote, isForeign, is9B };
+}
+
+function updateAmountPreview() {
+  const inputAmt = parseFloat(document.getElementById("amount").value) || 0;
+  const block = document.getElementById("ragicAmountBlock");
+  const isNet = document.getElementById("isNetAmount").checked;
+  const hint  = document.getElementById("isNetHint");
+
+  // 顯示/隱藏勾選提示
+  hint.classList.toggle("show", isNet);
+
+  if (inputAmt <= 0) { block.style.display = "none"; return; }
+
+  const incomeType  = document.querySelector('input[name="incomeType"]:checked')?.value || "9A 執行業務所得";
+  const nationality = document.querySelector('input[name="nationality"]:checked')?.value || "本國人";
+  const r = calcTax(inputAmt, incomeType, nationality, isNet);
+
+  const fmt = n => "$" + n.toLocaleString();
+  const fmtP = p => (p * 100).toFixed(2) + "%";
+
+  // 更新標題和標籤
+  document.getElementById("ragicBlockTitle").textContent =
+    isNet ? "公司應預扣及發放的金額（反推）" : "公司應預扣及發放的金額";
+  document.getElementById("lblIncome").textContent =
+    isNet ? "所得金額（反推計算）" : "所得金額（免填）";
+  document.getElementById("lblNet").textContent =
+    isNet ? "★ 實際支付金額（= 輸入金額）" : "★ 實際支付金額";
+
+  document.getElementById("ragicIncome").textContent = fmt(r.grossAmt);
+  document.getElementById("ragicTax").textContent = fmt(r.taxAmt);
+  document.getElementById("ragicNihi").textContent = fmt(r.nihiAmt);
+  document.getElementById("ragicNet").textContent = fmt(r.netAmt);
+  document.getElementById("ragicPersonal").textContent = fmt(r.grossAmt);
+  document.getElementById("ragicExpLabel").textContent = "費用率" + (r.is9B ? "（9B 30%）" : "（9A 0%）");
+  document.getElementById("ragicExpRate").textContent = fmtP(r.expenseRate);
+  document.getElementById("ragicPersonalNet").textContent = fmt(r.personalNet);
+  document.getElementById("ragicRule").textContent = r.ruleNote;
+
+  block.style.display = "block";
+}
+
+// ══ VALIDATION ══
+function validateStep(s) {
+  const req = id => { const el=document.getElementById(id); return el?el.value.trim()!=="":true; };
+  if (s===1) return req("name")&&req("idNumber")&&req("phone")&&req("email");
+  if (s===2) return req("bankName")&&req("bankCode")&&req("accountName")&&req("accountNumber")
+             &&!!uploadedImages.idFront&&!!uploadedImages.idBack&&!!uploadedImages.bankCover;
+  if (s===3) return projects.length>0&&req("amount")&&!!getSignatureDataURL();
+  return true;
+}
+
+// ══ NAVIGATION ══
+function nextStep(from) {
+  const err = document.getElementById("errStep"+from);
+  if (!validateStep(from)) { err.classList.add("show"); return; }
+  err.classList.remove("show");
+  if (from===3) buildReview();
+  goToStep(from+1);
+}
+function prevStep(from) { goToStep(from-1); }
+
+function goToStep(n) {
+  if (n<1||n>4) return;
+  currentStep = n;
+  [1,2,3,4].forEach(i => {
+    document.getElementById("step"+i).classList.toggle("active", i===n);
+    const dot = document.getElementById("tab"+i);
+    const lbl = document.getElementById("tlabel"+i);
+    dot.classList.toggle("active", i===n);
+    dot.classList.toggle("done", i<n);
+    lbl.classList.toggle("active", i===n);
+    const line = document.getElementById("line"+i);
+    if (line) line.classList.toggle("done", i<n);
+  });
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+// ══ REVIEW ══
+function buildReview() {
+  const g = id => document.getElementById(id)?.value||"";
+  const rv = name => document.querySelector(`input[name="${name}"]:checked`)?.value||"";
+  const sig = getSignatureDataURL();
+  const inputAmt = parseFloat(g("amount"))||0;
+  const isNet = document.getElementById("isNetAmount").checked;
+  const r = calcTax(inputAmt, rv("incomeType"), rv("nationality"), isNet);
+  const fmt = n => "$" + n.toLocaleString();
+
+  const rows = [
+    ["身分", rv("nationality")],
+    ["姓名",g("name")],["身分證號",g("idNumber")],["電子郵件",g("email")],
+    ["手機號碼",g("phone")],["戶籍地址",g("address")||"（未填）"],
+    ["申報類別",rv("incomeType")],["職業工會會員",rv("unionMember")],
+    ["銀行",g("bankName")+" ("+g("bankCode")+")"],
+    ["戶名 / 帳號",g("accountName")+" / "+g("accountNumber")],
+    ["專案名稱",projects.join("、")||"—"],
+    ["所得金額", fmt(r.grossAmt)],
+    ["代扣所得稅", fmt(r.taxAmt) + (r.hasTax ? "" : "（免扣）")],
+    ["代扣二代健保", fmt(r.nihiAmt) + (r.hasNihi ? "" : "（免扣）")],
+    ["實際支付金額", fmt(r.netAmt)],
+    ["金額模式", isNet ? "實領金額（反推）" : "所得金額"],
+    ["備註",g("notes")||"（無）"],
+    ["簽名", sig?`<img src="${sig}" style="max-height:60px;border-radius:4px;border:1px solid var(--border)">` : "（未簽名）"],
+  ];
+  document.getElementById("reviewWrap").innerHTML = rows.map(([k,v]) =>
+    `<div class="review-row"><div class="rv-k">${k}</div><div class="rv-v">${v}</div></div>`
+  ).join("");
+}
+
+// ══ SUBMIT ══
+async function submitForm() {
+  if (!APPS_SCRIPT_URL||APPS_SCRIPT_URL.includes("YOUR_")) {
+    alert("⚠️ 請先設定 APPS_SCRIPT_URL");return;
+  }
+  const g = id => document.getElementById(id)?.value||"";
+  const rv = name => document.querySelector(`input[name="${name}"]:checked`)?.value||"";
+  const inputAmt = parseFloat(g("amount"))||0;
+  const isNet = document.getElementById("isNetAmount").checked;
+  const taxResult = calcTax(inputAmt, rv("incomeType"), rv("nationality"), isNet);
   const payload = {
-    name: g("name"),
-    idNumber: g("idNumber"),
-    email: g("email"),
-    phone: g("phone"),
-    address: g("address"),
-    incomeType: radioVal("incomeType"),
-    unionMember: radioVal("unionMember"),
-    bankName: g("bankName"),
-    bankCode: g("bankCode"),
-    accountName: g("accountName"),
-    accountNumber: g("accountNumber"),
-    projectName: projects.join("、"),
-    amount: g("amount"),
-    notes: g("notes"),
-    signature: getSignatureDataURL() || "",
+    name:g("name"),idNumber:g("idNumber"),email:g("email"),phone:g("phone"),
+    address:g("address"),nationality:rv("nationality"),
+    incomeType:rv("incomeType"),unionMember:rv("unionMember"),
+    bankName:g("bankName"),bankCode:g("bankCode"),accountName:g("accountName"),accountNumber:g("accountNumber"),
+    projectName:projects.join("、"),
+    inputAmount: inputAmt,
+    isNetAmount: isNet,
+    amount: taxResult.grossAmt,
+    taxAmount: taxResult.taxAmt,
+    nihiAmount: taxResult.nihiAmt,
+    netAmount:  taxResult.netAmt,
+    notes:g("notes"),
+    signature:getSignatureDataURL()||"",
+    idFront:uploadedImages.idFront||"",idBack:uploadedImages.idBack||"",bankCover:uploadedImages.bankCover||"",
   };
-
   document.getElementById("loadingOverlay").classList.add("show");
-  document.getElementById("submitBtn").disabled = true;
-
+  document.getElementById("submitBtn").disabled=true;
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(APPS_SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)});
     const json = await res.json();
-
     if (json.success) {
-      // 儲存快照供 PDF 使用
       const now = new Date();
-      const dateStr = now.toISOString().slice(0,10).replace(/-/g,"");
-      const appId = `${dateStr}-${String(Date.now()).slice(-4)}`;
-      lastSubmittedData = { ...payload, appId, submittedAt: now.toLocaleString("zh-TW") };
-
+      const appId = now.toISOString().slice(0,10).replace(/-/g,"")+"-"+String(Date.now()).slice(-4);
+      lastSubmittedData = {...payload, appId, submittedAt:now.toLocaleString("zh-TW"), taxResult};
       document.getElementById("step4").classList.remove("active");
       document.getElementById("successScreen").classList.add("show");
-      document.getElementById("successId").textContent = `申請編號 ${appId}`;
-    } else {
-      throw new Error(json.message);
-    }
-  } catch (err) {
-    const errEl = document.getElementById("errStep4");
-    errEl.textContent = "送出失敗：" + err.message;
-    errEl.classList.add("show");
-    document.getElementById("submitBtn").disabled = false;
+      document.getElementById("successId").textContent = "申請編號 "+appId;
+    } else throw new Error(json.message);
+  } catch(err) {
+    const e = document.getElementById("errStep4");
+    e.textContent="送出失敗："+err.message; e.classList.add("show");
+    document.getElementById("submitBtn").disabled=false;
   } finally {
     document.getElementById("loadingOverlay").classList.remove("show");
   }
 }
 
-// ── PDF 產生 ──
+// ══ PDF ══
 async function downloadPDF() {
   if (!lastSubmittedData) return;
   const d = lastSubmittedData;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:"mm",format:"a4"});
+  const W=210, M=15;
+  let y=0;
 
-  const W = 210, margin = 18;
-  let y = 0;
+  // Palette
+  const INK=[13,13,15], INK2=[22,22,28], INK3=[30,30,38];
+  const GOLD=[201,168,76], GOLD2=[232,201,122];
+  const GRAY=[100,100,110], LGRAY=[50,50,60], LLGRAY=[38,38,48];
+  const WHITE=[255,255,255], OFFWHITE=[230,228,221];
+  const fnt=(sz,st="normal")=>{doc.setFontSize(sz);doc.setFont("helvetica",st)};
+  const tc=c=>doc.setTextColor(...c);
+  const fc=c=>doc.setFillColor(...c);
+  const sc=(c,w=0.3)=>{doc.setDrawColor(...c);doc.setLineWidth(w)};
 
-  // ── 顏色定義 ──
-  const C = {
-    brand:   [26, 26, 46],
-    accent:  [233, 69, 96],
-    light:   [245, 245, 240],
-    border:  [224, 224, 224],
-    muted:   [120, 120, 120],
-    text:    [26, 26, 46],
-    white:   [255, 255, 255],
-    green:   [45, 106, 79],
-  };
+  // ── PAGE BG ──
+  fc(INK); doc.rect(0,0,W,297,"F");
+  // subtle grid
+  doc.setDrawColor(201,168,76); doc.setLineWidth(0.05); doc.setGState(doc.GState({opacity:0.06}));
+  for(let gx=0;gx<W;gx+=10) doc.line(gx,0,gx,297);
+  for(let gy=0;gy<297;gy+=10) doc.line(0,gy,W,gy);
+  doc.setGState(doc.GState({opacity:1}));
 
-  // ── Helper: 設定填色 ──
-  const fill = (c) => doc.setFillColor(...c);
-  const stroke = (c) => doc.setDrawColor(...c);
-  const textCol = (c) => doc.setTextColor(...c);
-  const font = (size, style = "normal") => { doc.setFontSize(size); doc.setFont("helvetica", style); };
+  // ── HEADER BLOCK ──
+  fc(INK2); doc.rect(0,0,W,40,"F");
+  // gold left bar
+  fc(GOLD); doc.rect(0,0,3,40,"F");
+  // gold bottom line
+  sc(GOLD,0.4); doc.line(3,39.8,W,39.8);
 
-  // ════════════════ HEADER ════════════════
-  fill(C.brand);
-  doc.rect(0, 0, W, 38, "F");
+  fnt(18,"bold"); tc(GOLD);
+  doc.text("MixCode Studio",M+4,15);
+  fnt(8); tc([150,140,100]);
+  doc.text("LABOUR REMUNERATION REPORT",M+4,22);
+  fnt(7); tc(GRAY);
+  doc.text("No. "+d.appId,W-M,14,{align:"right"});
+  doc.text(d.submittedAt,W-M,21,{align:"right"});
+  y=48;
 
-  // 公司名（英文，helvetica 支援）
-  font(16, "bold");
-  textCol(C.white);
-  doc.text("MixCode Studio", margin, 16);
-
-  font(9, "normal");
-  textCol([180, 180, 200]);
-  doc.text("Labour Remuneration Report", margin, 23);
-
-  // 右上：申請編號
-  font(8, "normal");
-  textCol([180, 180, 200]);
-  doc.text(`No. ${d.appId}`, W - margin, 14, { align: "right" });
-  doc.text(d.submittedAt, W - margin, 20, { align: "right" });
-
-  // 紅色底線裝飾
-  fill(C.accent);
-  doc.rect(0, 36, W, 2, "F");
-  y = 46;
-
-  // ════════════════ Section Helper ════════════════
-  function sectionTitle(label, icon) {
-    fill(C.light);
-    doc.rect(margin, y, W - margin * 2, 8, "F");
-    stroke(C.border);
-    doc.setLineWidth(0.3);
-    doc.rect(margin, y, W - margin * 2, 8, "S");
-
-    font(9, "bold");
-    textCol(C.brand);
-    doc.text(`${icon}  ${label}`, margin + 3, y + 5.5);
-    y += 12;
+  // ── SECTION HELPER ──
+  function sec(title,sub) {
+    // gold accent line
+    fc(GOLD); doc.rect(M,y,3,7,"F");
+    fnt(9,"bold"); tc(GOLD); doc.text(title,M+6,y+5.2);
+    if(sub){fnt(7); tc(GRAY); doc.text(sub,M+6+doc.getTextWidth(title)+4,y+5.2);}
+    sc([50,50,60],0.2); doc.line(M,y+7,W-M,y+7);
+    y+=12;
   }
 
-  function row(label, value, isFull = false) {
-    const lw = isFull ? 0 : 44;
-    const vx = margin + lw + 2;
-    const vw = W - margin * 2 - lw - 2;
-
-    // 底線
-    stroke(C.border);
-    doc.setLineWidth(0.2);
-    doc.line(margin, y + 7, W - margin, y + 7);
-
-    font(8, "bold");
-    textCol(C.muted);
-    if (!isFull) doc.text(label, margin + 1, y + 5);
-
-    font(9, "normal");
-    textCol(C.text);
-    const lines = doc.splitTextToSize(value || "—", vw);
-    doc.text(lines, vx, y + 5);
-
-    const lineH = Math.max(lines.length * 5, 7);
-    y += lineH + 2;
+  // ── TABLE ROW ──
+  function tr(label,value,altBg=false) {
+    if(altBg){fc(LLGRAY);doc.rect(M,y,W-M*2,7.5,"F");}
+    fnt(7,"bold"); tc(GRAY); doc.text(label,M+2,y+5.2);
+    fnt(8); tc(OFFWHITE);
+    const lines=doc.splitTextToSize(String(value||""),W-M*2-55);
+    doc.text(lines[0]||"",M+55,y+5.2);
+    sc([40,40,50],0.15); doc.line(M,y+7.5,W-M,y+7.5);
+    y+=7.5;
+  }
+  function tr2(l1,v1,l2,v2,altBg=false) {
+    const half=(W-M*2)/2;
+    if(altBg){fc(LLGRAY);doc.rect(M,y,W-M*2,7.5,"F");}
+    fnt(7,"bold"); tc(GRAY);
+    doc.text(l1,M+2,y+5.2); doc.text(l2,M+half+2,y+5.2);
+    fnt(8); tc(OFFWHITE);
+    doc.text(String(v1||""),M+38,y+5.2);
+    doc.text(String(v2||""),M+half+38,y+5.2);
+    sc([40,40,50],0.15); doc.line(M,y+7.5,W-M,y+7.5);
+    sc([50,50,60],0.2); doc.line(M+half,y,M+half,y+7.5);
+    y+=7.5;
   }
 
-  function twoCol(label1, val1, label2, val2) {
-    const cx = W / 2;
-    stroke(C.border);
-    doc.setLineWidth(0.2);
-    doc.line(margin, y + 7, W - margin, y + 7);
+  // ── BASIC INFO ──
+  sec("基本資訊","PERSONAL INFORMATION");
+  tr2("填寫日期",d.submittedAt.slice(0,10),"編號",d.appId,false);
+  tr("姓名",d.name,true);
+  tr2("身分證號",d.idNumber,"手機號碼",d.phone,false);
+  tr("電子郵件",d.email,true);
+  tr("戶籍地址",d.address,false);
+  tr2("申報類別",d.incomeType,"工會會員",d.unionMember,true);
+  y+=6;
 
-    font(8, "bold"); textCol(C.muted);
-    doc.text(label1, margin + 1, y + 5);
-    doc.text(label2, cx + 1, y + 5);
+  // ── SIGNATURE ──
+  sec("申請人簽名","SIGNATURE");
+  fc(INK3); sc([50,50,65],0.3);
+  doc.rect(M,y,W-M*2,28,"FD");
+  if(d.signature&&d.signature.startsWith("data:image")){
+    try{
+      doc.addImage(d.signature,d.signature.includes("png")?"PNG":"JPEG",M+4,y+2,70,24);
+    }catch(e){ fnt(8);tc(GRAY);doc.text("（簽名無法嵌入）",M+4,y+15); }
+  } else { fnt(8);tc(GRAY);doc.text("（未簽名）",M+4,y+15); }
+  y+=32;y+=6;
 
-    font(9, "normal"); textCol(C.text);
-    doc.text(String(val1 || "—"), margin + 40, y + 5);
-    doc.text(String(val2 || "—"), cx + 40, y + 5);
+  // ── PAYMENT ──
+  sec("付款資訊","PAYMENT DETAILS");
+  tr2("銀行",d.bankName,"銀行代號",d.bankCode,false);
+  tr2("戶名",d.accountName,"帳號",d.accountNumber,true);
+  y+=4;
 
-    y += 9;
+  // ── BANK COVER ──
+  if(d.bankCover&&d.bankCover.startsWith("data:image")){
+    fc(INK3);sc([50,50,65],0.3);doc.rect(M,y,W-M*2,34,"FD");
+    fnt(7);tc(GRAY);doc.text("存摺封面",M+2,y+5);
+    try{doc.addImage(d.bankCover,d.bankCover.includes("png")?"PNG":"JPEG",M+22,y+2,55,30);}catch(e){}
+    y+=38;
   }
+  y+=4;
 
-  // ════════════════ SECTION 1：基本資訊 ════════════════
-  sectionTitle("基本資訊", "01");
-  twoCol("姓名 Name", d.name, "身分證號 ID", d.idNumber);
-  twoCol("電子郵件 Email", d.email, "手機 Phone", d.phone);
-  row("戶籍地址", d.address || "（未填）");
-  twoCol("申報類別", d.incomeType, "工會會員", d.unionMember);
-  y += 4;
+  // ── AMOUNT ──
+  sec("款項資訊","PROJECT & AMOUNT");
+  tr("專案名稱",d.projectName,false);
+  const amt=parseFloat(d.amount)||0;
+  const r = d.taxResult || calcTax(amt, d.incomeType||"9A 執行業務所得", d.nationality||"本國人");
+  const fmt = n => "NT$ " + n.toLocaleString();
+  const fmtP = p => (p*100).toFixed(2)+"%";
 
-  // ════════════════ SECTION 2：銀行帳戶 ════════════════
-  sectionTitle("付款帳戶", "02");
-  twoCol("銀行 Bank", d.bankName, "代號 Code", d.bankCode);
-  twoCol("戶名 A/C Name", d.accountName, "帳號 A/C No.", d.accountNumber);
-  y += 4;
+  // 公司發放明細大框
+  fc(INK2); sc(GOLD,0.4); doc.rect(M,y,W-M*2,38,"FD");
+  fc(GOLD); doc.rect(M,y,3,38,"F");
+  fnt(7); tc([160,140,80]);
+  doc.text("公司應預扣及發放的金額",M+6,y+5.5);
+  sc([50,50,40],0.2);doc.line(M,y+7,W-M,y+7);
 
-  // ════════════════ SECTION 3：款項 ════════════════
-  sectionTitle("款項資訊", "03");
-  row("專案名稱", d.projectName, true);
+  const rows4=[
+    ["所得金額", fmt(amt), false],
+    ["代扣所得稅"+(r.hasTax?"（"+fmtP(r.taxRate)+"）":"（免扣）"), r.hasTax?fmt(r.taxAmt):"$0", false],
+    ["代扣二代健保"+(r.hasNihi?"（"+fmtP(r.nihiRate)+"）":"（免扣）"), r.hasNihi?fmt(r.nihiAmt):"$0", false],
+    ["實際支付金額", fmt(r.netAmt), true],
+  ];
+  let ry=y+9;
+  rows4.forEach(([l,v,bold])=>{
+    fnt(7,bold?"bold":"normal");
+    tc(bold?GOLD2:[160,155,140]);
+    doc.text("★ "+l,M+6,ry);
+    fnt(8,bold?"bold":"normal");
+    tc(bold?GOLD2:OFFWHITE);
+    doc.text(v,W-M-2,ry,{align:"right"});
+    ry+=7;
+  });
+  y+=42;
 
-  // 金額大框
-  const amt = parseFloat(d.amount) || 0;
-  const tax = Math.round(amt * 0.1);
-  const net = amt - tax;
+  if(d.notes){tr("備註",d.notes,true);} y+=4;
 
-  fill([240, 248, 244]);
-  stroke(C.green);
-  doc.setLineWidth(0.5);
-  doc.rect(margin, y, W - margin * 2, 22, "FD");
+  // ── NEW PAGE for ID cards ──
+  doc.addPage();
+  fc(INK); doc.rect(0,0,W,297,"F");
+  fc(GOLD); doc.rect(0,0,3,297,"F");
+  y=18;
 
-  font(8, "normal"); textCol(C.muted);
-  doc.text("實際領取金額", margin + 4, y + 7);
-  doc.text("參考代扣所得稅 (10%)", margin + 60, y + 7);
-  doc.text("參考實拿金額", margin + 120, y + 7);
+  sec("身分證","NATIONAL ID CARD");
+  const iw=(W-M*2)/2-4, ih=44;
 
-  font(13, "bold"); textCol(C.green);
-  doc.text(`NT$ ${amt.toLocaleString()}`, margin + 4, y + 17);
+  // ID Front
+  fc(INK2);sc([50,50,65],0.3);doc.rect(M,y,iw,ih+8,"FD");
+  fnt(7,"bold");tc(GOLD);doc.text("正面 FRONT",M+2,y+5.5);
+  sc([60,55,35],0.3);doc.line(M,y+7,M+iw,y+7);
+  if(d.idFront&&d.idFront.startsWith("data:image")){
+    try{doc.addImage(d.idFront,d.idFront.includes("png")?"PNG":"JPEG",M+1,y+8,iw-2,ih);}
+    catch(e){fnt(8);tc(GRAY);doc.text("（無法嵌入）",M+4,y+30);}
+  } else {fnt(8);tc(GRAY);doc.text("（未上傳）",M+4,y+30);}
 
-  font(10, "normal"); textCol(C.muted);
-  doc.text(`NT$ ${tax.toLocaleString()}`, margin + 60, y + 17);
-  doc.text(`NT$ ${net.toLocaleString()}`, margin + 120, y + 17);
+  // ID Back
+  const x2=M+iw+8;
+  fc(INK2);sc([50,50,65],0.3);doc.rect(x2,y,iw,ih+8,"FD");
+  fnt(7,"bold");tc(GOLD);doc.text("反面 BACK",x2+2,y+5.5);
+  sc([60,55,35],0.3);doc.line(x2,y+7,x2+iw,y+7);
+  if(d.idBack&&d.idBack.startsWith("data:image")){
+    try{doc.addImage(d.idBack,d.idBack.includes("png")?"PNG":"JPEG",x2+1,y+8,iw-2,ih);}
+    catch(e){fnt(8);tc(GRAY);doc.text("（無法嵌入）",x2+4,y+30);}
+  } else {fnt(8);tc(GRAY);doc.text("（未上傳）",x2+4,y+30);}
+  y+=ih+16;y+=8;
 
-  y += 28;
+  // ── STATUS ──
+  sec("申報狀態","DECLARATION STATUS");
+  tr2("付款完成","","申報完成","",false);
+  y+=6;
 
-  if (d.notes) {
-    row("備註", d.notes);
-    y += 2;
-  }
+  // ── FOOTER both pages ──
+  [1,2].forEach(pg => {
+    doc.setPage(pg);
+    fc(INK2); doc.rect(0,287,W,10,"F");
+    sc(GOLD,0.3); doc.line(0,287,W,287);
+    fnt(7); tc(GRAY);
+    doc.text("混合編碼工作室 勞務報酬單系統",M+4,293);
+    doc.text("列印時間："+new Date().toLocaleString("zh-TW"),W-M,293,{align:"right"});
+  });
 
-  // ════════════════ SECTION 4：簽名 ════════════════
-  sectionTitle("申請人簽名", "04");
-
-  if (d.signature && d.signature.startsWith("data:image")) {
-    // 白底簽名框
-    fill(C.white);
-    stroke(C.border);
-    doc.setLineWidth(0.4);
-    doc.rect(margin, y, W - margin * 2, 36, "FD");
-
-    try {
-      const sigFormat = d.signature.includes("data:image/png") ? "PNG" : "JPEG";
-      doc.addImage(d.signature, sigFormat, margin + 4, y + 3, (W - margin * 2) - 8, 30);
-    } catch(e) {
-      font(9, "normal"); textCol(C.muted);
-      doc.text("（簽名圖片無法嵌入）", margin + 4, y + 18);
-    }
-    y += 40;
-  } else {
-    fill(C.white);
-    stroke(C.border);
-    doc.rect(margin, y, W - margin * 2, 22, "FD");
-    font(9, "italic"); textCol(C.muted);
-    doc.text("（無簽名）", margin + 4, y + 13);
-    y += 26;
-  }
-
-  // ════════════════ FOOTER ════════════════
-  const pageH = 297;
-  fill(C.brand);
-  doc.rect(0, pageH - 14, W, 14, "F");
-
-  font(7, "normal"); textCol([180, 180, 200]);
-  doc.text("本文件由 MixCode Studio 勞報單系統自動產生，僅供存檔用途。", margin, pageH - 5);
-  doc.text(`產生時間：${new Date().toLocaleString("zh-TW")}`, W - margin, pageH - 5, { align: "right" });
-
-  // 儲存
-  const safeId = d.appId.replace(/[^a-z0-9\-]/gi, "_");
-  doc.save(`勞報單_${d.name}_${safeId}.pdf`);
+  doc.save("勞報單_"+d.name+"_"+d.appId+".pdf");
 }
 
-// ── 簽名 ──
-let sigMode = "draw";       // "draw" | "upload"
-let uploadedSigDataURL = null;
-let isDrawing = false;
-let lastX = 0, lastY = 0;
+// ══ SIGNATURE CANVAS ══
+let sigMode="draw", uploadedSigDataURL=null, isDrawing=false, lastX=0, lastY=0;
 
-// Tab 切換
 function switchSigTab(mode) {
-  sigMode = mode;
-  document.querySelectorAll(".sig-tab").forEach((t, i) => {
-    t.classList.toggle("active", (i === 0 && mode === "draw") || (i === 1 && mode === "upload"));
-  });
-  document.getElementById("panelDraw").classList.toggle("active", mode === "draw");
-  document.getElementById("panelUpload").classList.toggle("active", mode === "upload");
+  sigMode=mode;
+  document.querySelectorAll(".sig-tab").forEach((t,i)=>t.classList.toggle("active",(i===0&&mode==="draw")||(i===1&&mode==="upload")));
+  document.getElementById("panelDraw").classList.toggle("active",mode==="draw");
+  document.getElementById("panelUpload").classList.toggle("active",mode==="upload");
 }
 
-// 初始化 Canvas
-const canvas = document.getElementById("sigCanvas");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("sigCanvas"), ctx=canvas.getContext("2d");
+function getPos(e,c){
+  const r=c.getBoundingClientRect(),sx=c.width/r.width,sy=c.height/r.height;
+  const s=e.touches?e.touches[0]:e;
+  return{x:(s.clientX-r.left)*sx,y:(s.clientY-r.top)*sy};
+}
+function startDraw(e){e.preventDefault();isDrawing=true;const p=getPos(e,canvas);lastX=p.x;lastY=p.y;canvas.classList.add("has-sig");}
+function draw(e){if(!isDrawing)return;e.preventDefault();const p=getPos(e,canvas);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.strokeStyle=document.getElementById("penColor").value;ctx.lineWidth=parseFloat(document.getElementById("penSize").value);ctx.lineCap="round";ctx.lineJoin="round";ctx.stroke();lastX=p.x;lastY=p.y;}
+function stopDraw(){isDrawing=false;}
+canvas.addEventListener("mousedown",startDraw);canvas.addEventListener("mousemove",draw);canvas.addEventListener("mouseup",stopDraw);canvas.addEventListener("mouseleave",stopDraw);
+canvas.addEventListener("touchstart",startDraw,{passive:false});canvas.addEventListener("touchmove",draw,{passive:false});canvas.addEventListener("touchend",stopDraw);
+function clearCanvas(){ctx.clearRect(0,0,canvas.width,canvas.height);canvas.classList.remove("has-sig");}
 
-function getPos(e, canvas) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const src = e.touches ? e.touches[0] : e;
-  return {
-    x: (src.clientX - rect.left) * scaleX,
-    y: (src.clientY - rect.top) * scaleY
-  };
+function handleSigUpload(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{uploadedSigDataURL=ev.target.result;document.getElementById("uploadPreviewImg").src=uploadedSigDataURL;document.getElementById("uploadPreviewWrap").style.display="block";document.getElementById("uploadArea").style.display="none";};
+  r.readAsDataURL(file);
+}
+function removeSigUpload(){uploadedSigDataURL=null;document.getElementById("sigFile").value="";document.getElementById("uploadPreviewWrap").style.display="none";document.getElementById("uploadArea").style.display="block";}
+function getSignatureDataURL(){
+  if(sigMode==="upload")return uploadedSigDataURL;
+  const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  return Array.from(data).some((v,i)=>i%4===3&&v>0)?canvas.toDataURL("image/png"):null;
 }
 
-function startDraw(e) {
-  e.preventDefault();
-  isDrawing = true;
-  const pos = getPos(e, canvas);
-  lastX = pos.x; lastY = pos.y;
-  canvas.classList.add("has-sig");
-}
-function draw(e) {
-  if (!isDrawing) return;
-  e.preventDefault();
-  const pos = getPos(e, canvas);
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(pos.x, pos.y);
-  ctx.strokeStyle = document.getElementById("penColor").value;
-  ctx.lineWidth = parseFloat(document.getElementById("penSize").value);
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.stroke();
-  lastX = pos.x; lastY = pos.y;
-}
-function stopDraw() { isDrawing = false; }
-
-canvas.addEventListener("mousedown", startDraw);
-canvas.addEventListener("mousemove", draw);
-canvas.addEventListener("mouseup", stopDraw);
-canvas.addEventListener("mouseleave", stopDraw);
-canvas.addEventListener("touchstart", startDraw, { passive: false });
-canvas.addEventListener("touchmove", draw, { passive: false });
-canvas.addEventListener("touchend", stopDraw);
-
-function clearCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  canvas.classList.remove("has-sig");
-}
-
-// 上傳簽名圖片
-function handleSigUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    uploadedSigDataURL = ev.target.result;
-    document.getElementById("uploadPreviewImg").src = uploadedSigDataURL;
-    document.getElementById("uploadPreviewWrap").style.display = "block";
-    document.getElementById("uploadArea").style.display = "none";
-  };
-  reader.readAsDataURL(file);
-}
-
-function removeSigUpload() {
-  uploadedSigDataURL = null;
-  document.getElementById("sigFile").value = "";
-  document.getElementById("uploadPreviewWrap").style.display = "none";
-  document.getElementById("uploadArea").style.display = "block";
-}
-
-// 取得最終簽名 dataURL
-function getSignatureDataURL() {
-  if (sigMode === "upload") return uploadedSigDataURL;
-  // 畫布模式：檢查是否有筆跡
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  const hasContent = Array.from(data).some((v, i) => i % 4 === 3 && v > 0);
-  return hasContent ? canvas.toDataURL("image/png") : null;
-}
-
-// ── 重置 ──
-function resetForm() {
+// ══ RESET ══
+function resetForm(){
   document.getElementById("successScreen").classList.remove("show");
-  document.getElementById("reviewTable").innerHTML = "";
-  projects = [];
-  lastSubmittedData = null;
-  renderProjects();
-  ["name","idNumber","email","phone","address","bankName","bankCode",
-   "accountName","accountNumber","amount","notes"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = "";
+  document.getElementById("reviewWrap").innerHTML="";
+  projects=[]; lastSubmittedData=null; renderProjects();
+  ["name","idNumber","email","phone","address","bankName","bankCode","accountName","accountNumber","amount","notes"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  document.getElementById("ragicAmountBlock").style.display = "none";
+  document.getElementById("isNetAmount").checked = false;
+  document.getElementById("isNetHint").classList.remove("show");
+  clearCanvas(); removeSigUpload(); switchSigTab("draw");
+  ["idFront","idBack","bankCover"].forEach(k=>{ uploadedImages[k]=null; });
+  ["idFrontBox","idBackBox","bankCoverBox"].forEach(id=>{
+    const box=document.getElementById(id);if(!box)return;
+    box.classList.remove("has-img");
+    const img=box.querySelector("img");if(img)img.remove();
+    const rb=box.querySelector(".ub-remove");if(rb)rb.remove();
+    box.querySelectorAll(".ub-icon,.ub-label,.ub-hint").forEach(el=>el.style.display="");
+    const inp=box.querySelector("input[type=file]");if(inp)inp.value="";
   });
-  updateAmountPreview();
-  clearCanvas();
-  removeSigUpload();
-  switchSigTab("draw");
   goToStep(1);
 }
 </script>
-
 </body>
 </html>
