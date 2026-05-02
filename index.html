@@ -492,7 +492,7 @@ textarea{resize:vertical;min-height:80px}
 // ║  ★ 填入你的 Apps Script 網址（只需改這裡）       ║
 // ║  格式：https://script.google.com/a/macros/...    ║
 // ╚══════════════════════════════════════════════════╝
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEPTRKm_Vy-uyyvLlY3BOJ2RfjHCQFSyN0qXM1uYNXNTiMvFgGKXaj6bjCxkPF3if55g/exec";
+const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 </script>
 
 <div class="loading-overlay" id="loadingOverlay">
@@ -1029,14 +1029,34 @@ function validateStep(s) {
   if (s===1) return req("name")&&req("idNumber")&&req("phone")&&req("email");
   if (s===2) return req("bankName")&&req("bankCode")&&req("accountName")&&req("accountNumber")
              &&!!uploadedImages.idFront&&!!uploadedImages.idBack&&!!uploadedImages.bankCover;
-  if (s===3) return projects.length>0 && req("amount") && !!getSignatureDataURL();
+  if (s===3) {
+    const hasProject = projects.length > 0;
+    const hasAmount  = req("amount");
+    const sig        = getSignatureDataURL();
+    const hasSig     = !!sig;
+    // 顯示詳細錯誤
+    const err = document.getElementById("errStep3");
+    if (!hasProject) { err.textContent = "請填寫專案名稱（按＋新增）"; return false; }
+    if (!hasAmount)  { err.textContent = "請填寫金額"; return false; }
+    if (!hasSig)     {
+      err.textContent = "請完成簽名（目前模式：" + sigMode +
+        (sigMode==="upload" ? "，圖片："+(uploadedSigDataURL?"有":"無") : "，畫布："+(canvas.classList.contains("has-sig")?"有筆跡":"無筆跡")) + "）";
+      return false;
+    }
+    return true;
+  }
   return true;
 }
 
 // ══ NAVIGATION ══
 function nextStep(from) {
   const err = document.getElementById("errStep"+from);
-  if (!validateStep(from)) { err.classList.add("show"); return; }
+  if (!validateStep(from)) {
+    // validateStep already set the error message for step 3
+    if (from !== 3) err.textContent = "請填寫所有必填欄位";
+    err.classList.add("show");
+    return;
+  }
   err.classList.remove("show");
   if (from===3) buildReview();
   goToStep(from+1);
