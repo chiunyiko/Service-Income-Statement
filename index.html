@@ -492,7 +492,7 @@ textarea{resize:vertical;min-height:80px}
 // ║  ★ 填入你的 Apps Script 網址（只需改這裡）       ║
 // ║  格式：https://script.google.com/a/macros/...    ║
 // ╚══════════════════════════════════════════════════╝
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEPTRKm_Vy-uyyvLlY3BOJ2RfjHCQFSyN0qXM1uYNXNTiMvFgGKXaj6bjCxkPF3if55g/exec";
+const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 </script>
 
 <div class="loading-overlay" id="loadingOverlay">
@@ -1030,11 +1030,15 @@ function validateStep(s) {
   if (s===2) return req("bankName")&&req("bankCode")&&req("accountName")&&req("accountNumber")
              &&!!uploadedImages.idFront&&!!uploadedImages.idBack&&!!uploadedImages.bankCover;
   if (s===3) {
+    // 如果輸入框有文字但還沒按＋，自動新增
+    const projectInput = document.getElementById("projectInput");
+    if (projectInput && projectInput.value.trim() !== "") {
+      addProject();
+    }
     const hasProject = projects.length > 0;
     const hasAmount  = req("amount");
     const sig        = getSignatureDataURL();
     const hasSig     = !!sig;
-    // 顯示詳細錯誤
     const err = document.getElementById("errStep3");
     if (!hasProject) { err.textContent = "請填寫專案名稱（按＋新增）"; return false; }
     if (!hasAmount)  { err.textContent = "請填寫金額"; return false; }
