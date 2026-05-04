@@ -374,19 +374,31 @@ textarea{resize:vertical;min-height:80px}
 /* ══ LOADING ══ */
 .loading-overlay{
   display:none;position:fixed;inset:0;
-  background:rgba(44,36,22,0.7);backdrop-filter:blur(6px);
-  z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+  background:rgba(44,36,22,0.82);backdrop-filter:blur(6px);
+  z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+  padding:20px;text-align:center;
 }
 .loading-overlay.show{display:flex}
 .spinner{
-  width:40px;height:40px;
+  width:44px;height:44px;
   border:3px solid rgba(240,230,200,0.2);
-  border-top-color:var(--hdr-text);
+  border-top-color:var(--gold);
   border-radius:50%;
-  animation:spin .7s linear infinite;
+  animation:spin .8s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading-overlay p{font-size:13px;color:var(--hdr-text);letter-spacing:1px}
+.loading-overlay .lo-title{
+  font-size:16px;font-weight:700;color:var(--gold);
+  letter-spacing:1px;margin-top:4px;
+}
+.loading-overlay .lo-sub{
+  font-size:13px;color:rgba(240,230,200,0.7);
+  line-height:1.8;max-width:260px;
+}
+.loading-overlay .lo-warn{
+  font-size:11px;color:rgba(240,230,200,0.45);
+  margin-top:4px;
+}
 
 /* ══ DECORATIVE LINE ══ */
 .deco-line{
@@ -492,12 +504,14 @@ textarea{resize:vertical;min-height:80px}
 // ║  ★ 填入你的 Apps Script 網址（只需改這裡）       ║
 // ║  格式：https://script.google.com/a/macros/...    ║
 // ╚══════════════════════════════════════════════════╝
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEPTRKm_Vy-uyyvLlY3BOJ2RfjHCQFSyN0qXM1uYNXNTiMvFgGKXaj6bjCxkPF3if55g/exec";
+const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 </script>
 
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
-  <p>SUBMITTING</p>
+  <div class="lo-title">資料上傳中</div>
+  <div class="lo-sub">請稍待，正在將資料與圖片<br>上傳至雲端，預計 1–2 分鐘</div>
+  <div class="lo-warn">⚠ 請勿關閉或重新整理此頁面</div>
 </div>
 
 <!-- ══ HEADER ══ -->
